@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "node --watch index.js"
+    "start": "node --watch index.js",
+    "test": "node --watch tests.js"
   },
   "keywords": [],
   "author": "",

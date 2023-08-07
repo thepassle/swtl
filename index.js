@@ -10,7 +10,7 @@ const ATTR_VAL = 6;
 
 const COMPONENT_SYMBOL = Symbol("component");
 
-function html(statics, ...dynamics) {
+export function html(statics, ...dynamics) {
   // console.log(statics, dynamics);
 
   let mode = TEXT;
@@ -99,7 +99,7 @@ function html(statics, ...dynamics) {
             }
 
             if (property) {
-              component.properties.push({name: property});
+              component.properties.push({name: property, value: ''});
             }
           } else if (attrMode === ATTR_VAL) {
             /**
@@ -135,9 +135,7 @@ function html(statics, ...dynamics) {
                   j++;
                 }
 
-                if (val) { 
-                  property.value = val;
-                }
+                property.value = val || '';
                 attrMode = SET_ATTR;
               }
               /**
@@ -166,10 +164,8 @@ function html(statics, ...dynamics) {
                 j++;
               }
 
-              if(val) {
-                property.value = val;
-                attrMode = SET_ATTR;
-              }
+              property.value = val || '';
+              attrMode = SET_ATTR;
             }
           }
         } else if (componentMode === CHILDREN) {
