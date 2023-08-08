@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
-import { html, COMPONENT_SYMBOL } from './html.js';
+import { html } from './html.js';
+import { COMPONENT_SYMBOL } from './symbol.js';
 
 function Foo() {}
 function Bar() {
@@ -19,13 +20,13 @@ describe('parsing', () => {
   it('handles expressions', () => {
     const result = html`<h1>hello</h1>${1}`;
     assert.deepStrictEqual(result[0], `<h1>hello</h1>`);
-    assert.deepStrictEqual(result[1], `1`);
+    assert.deepStrictEqual(result[1], 1);
   });
 
   it('handles arrays', () => {
     const result = html`<h1>${[1,2]}</h1>`;
     assert.deepStrictEqual(result[0], `<h1>`);
-    assert.deepStrictEqual(result[1], `12`);
+    assert.deepStrictEqual(result[1], [1,2]);
   });
 
   it('handles components', () => {
@@ -145,6 +146,38 @@ describe('children', () => {
       ]);
   });
 
+  it('handles Component children with closing tag', () => {
+    const template = html`<${Foo}><${Bar}><//><//>`
+    assert.deepStrictEqual(template[0].children, 
+      [
+        {
+          fn: Bar,
+          properties: [],
+          children: [],
+          kind: COMPONENT_SYMBOL
+        }
+      ]);
+  });
+
+  it('handles sibling Component children', () => {
+    const template = html`<${Foo}><${Bar}/><${Baz}/><//>`
+    assert.deepStrictEqual(template[0].children, 
+      [
+        {
+          fn: Bar,
+          properties: [],
+          children: [],
+          kind: COMPONENT_SYMBOL
+        },
+        {
+          fn: Baz,
+          properties: [],
+          children: [],
+          kind: COMPONENT_SYMBOL
+        },
+      ]);
+  });
+
   it('handles multiple Component children', () => {
     const template = html`<${Foo}>
       <${Bar}/>
@@ -163,31 +196,8 @@ describe('children', () => {
           properties: [],
           children: [],
           kind: COMPONENT_SYMBOL
-        }
-      ]);
-  });
-
-  it('handles nested Component children', () => {
-    const template = html`<${Foo}>
-      <${Bar}>
-        <${Baz}/>
-      <//>
-    <//>`
-    assert.deepStrictEqual(template[0].children, 
-      [
-        {
-          fn: Bar,
-          properties: [],
-          children: [
-            {
-              fn: Baz,
-              properties: [],
-              children: [],
-              kind: COMPONENT_SYMBOL
-            }
-          ],
-          kind: COMPONENT_SYMBOL
         },
+        '    '
       ]);
   });
 });
