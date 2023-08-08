@@ -1,3 +1,5 @@
+import { render, renderToString } from './render.js';
+
 const TEXT = 0;
 const COMPONENT = 1;
 
@@ -178,8 +180,6 @@ export function html(statics, ...dynamics) {
            * @example <${Foo}>children<//>
            *                           ^^
            */
-          // @TODO this should maybe move to mode === COMPONENT, because its only relevant there
-          // @TODO this should be in mode children
           if (statics[i][j + 1] === "/" && statics[i][j + 2] === "/") {
             mode = TEXT;
             // @TODO this index may be off
@@ -236,6 +236,9 @@ export function html(statics, ...dynamics) {
 }
 
 function Foo() {}
+function Bar() {
+  return html`<h2>world</h2>`
+}
 
 const template = html`<${Foo}><h2>hi</h2><//>`;
 // const template = html`<${Foo}/><h2>hi</h2>`;

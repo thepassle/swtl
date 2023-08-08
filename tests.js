@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
-import { html } from './index.js';
+import { html } from './html.js';
 
 function Foo() {}
 

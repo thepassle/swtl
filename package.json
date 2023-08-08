@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node --watch index.js",
+    "start": "node --watch html.js",
     "test": "node --watch tests.js"
   },
   "keywords": [],
