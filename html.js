@@ -1,4 +1,4 @@
-import { render, renderToString } from './render.js';
+// import { render, renderToString } from './render.js';
 
 const TEXT = 0;
 const COMPONENT = 1;
@@ -10,7 +10,7 @@ const CHILDREN = 4;
 const SET_PROP = 5;
 const PROP_VAL = 6;
 
-const COMPONENT_SYMBOL = Symbol("component");
+export const COMPONENT_SYMBOL = Symbol("component");
 
 export function html(statics, ...dynamics) {
   // console.log(statics, dynamics);
@@ -32,6 +32,7 @@ export function html(statics, ...dynamics) {
     const component = {
       kind: COMPONENT_SYMBOL,
       properties: [],
+      children: [],
       fn: undefined,
     };
 
@@ -240,5 +241,4 @@ function Bar() {
   return html`<h2>world</h2>`
 }
 
-const template = html`<${Foo}><h2>hi</h2><//>`;
-// const template = html`<${Foo}/><h2>hi</h2>`;
+const template = html`<${Foo}><h2>hi ${2}</h2><//>`;

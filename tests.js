@@ -1,8 +1,14 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
-import { html } from './html.js';
+import { html, COMPONENT_SYMBOL } from './html.js';
 
 function Foo() {}
+function Bar() {
+  return html`<h2>bar</h2>`;
+}
+function Baz() {
+  return html`<h2>baz</h2>`;
+}
 
 describe('parsing', () => {
   it('handles html', () => {
@@ -107,5 +113,81 @@ describe('properties', () => {
       const result = html`<${Foo} bar="${1}" foo="2"/>`;
       assert.deepStrictEqual(result[0].properties, [{ name: 'bar', value: 1}, {name:'foo', value: '2'}]);
     });
+  });
+});
+
+describe('children', () => {
+  it('handles string children', () => {
+    const template = html`<${Foo}><h1>hi</h1><//>`
+    assert.deepStrictEqual(template[0].children, ['<h1>hi</h1>']);
+  });
+
+  it('handles string children with expressions', () => {
+    const template = html`<${Foo}><h1>hi ${2}</h1><//>`
+    assert.deepStrictEqual(template[0].children, ['<h1>hi ', 2, '</h1>']);
+  });
+
+  it('handles string children with expressions', () => {
+    const template = html`<${Foo}><h1>hi ${2}</h1><//>`
+    assert.deepStrictEqual(template[0].children, ['<h1>hi ', 2, '</h1>']);
+  });
+
+  it('handles Component children', () => {
+    const template = html`<${Foo}><${Bar}/><//>`
+    assert.deepStrictEqual(template[0].children, 
+      [
+        {
+          fn: Bar,
+          properties: [],
+          children: [],
+          kind: COMPONENT_SYMBOL
+        }
+      ]);
+  });
+
+  it('handles multiple Component children', () => {
+    const template = html`<${Foo}>
+      <${Bar}/>
+      <${Baz}/>
+    <//>`
+    assert.deepStrictEqual(template[0].children, 
+      [
+        {
+          fn: Bar,
+          properties: [],
+          children: [],
+          kind: COMPONENT_SYMBOL
+        },
+        {
+          fn: Baz,
+          properties: [],
+          children: [],
+          kind: COMPONENT_SYMBOL
+        }
+      ]);
+  });
+
+  it('handles nested Component children', () => {
+    const template = html`<${Foo}>
+      <${Bar}>
+        <${Baz}/>
+      <//>
+    <//>`
+    assert.deepStrictEqual(template[0].children, 
+      [
+        {
+          fn: Bar,
+          properties: [],
+          children: [
+            {
+              fn: Baz,
+              properties: [],
+              children: [],
+              kind: COMPONENT_SYMBOL
+            }
+          ],
+          kind: COMPONENT_SYMBOL
+        },
+      ]);
   });
 });
