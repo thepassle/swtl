@@ -255,20 +255,20 @@ export function html(statics, ...dynamics) {
 
 
 
-function Foo({bar}) {
-  return html`
-    <h1>foo ${bar}</h1>
-  `
-}
+// function Foo({bar}) {
+//   return html`
+//     <h1>foo ${bar}</h1>
+//   `
+// }
 
-const template = html`
-  <${Foo} bar="${1}"/>
-  <${Foo} bar="${2}"/>
-`;
+// const template = html`
+//   <${Foo} bar="${1}"/>
+//   <${Foo} bar="${2}"/>
+// `;
 
 
-const r = await renderToString(template);
-console.log(r);
+// const r = await renderToString(template);
+// console.log(r);
 
 
 // console.log('\n')
