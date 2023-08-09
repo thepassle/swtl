@@ -1,0 +1,52 @@
+<html>
+  <base href="/">
+
+  <head></head>
+
+  <body>
+    <p>Installing service worker...</p>
+    <script>
+      /**
+       * If no service worker is installed yet, we wait for it to be installed
+       * and then reload the page
+       * 
+       * Further updates are taken care of by the update script, because the
+       * user will never see this index.html again
+       */
+      navigator.serviceWorker.register('/bundled-sw.js').then((registration) => {
+        console.log('Service worker registered successfully', registration);
+
+        if (!navigator.serviceWorker.controller) {
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event?.data?.type === 'SW_ACTIVATED') {
+              window.location.reload();
+            }
+          });
+        }
+      }).catch((err) => {
+        console.log('Service worker registration failed: ', err);
+      });
+
+      let refreshing;
+      async function handleUpdate() {
+        // check to see if there is a current active service worker
+        const oldSw = (await navigator.serviceWorker.getRegistration())?.active?.state;
+
+        navigator.serviceWorker.addEventListener('controllerchange', async () => {
+          if (refreshing) return;
+
+          // when the controllerchange event has fired, we get the new service worker
+          const newSw = (await navigator.serviceWorker.getRegistration())?.active?.state;
+
+          // if there was already an old activated service worker, and a new activating service worker, do the reload
+          if (oldSw === 'activated' && newSw === 'activating') {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+      }
+
+      handleUpdate();
+    </script>
+  </body>
+</html>
