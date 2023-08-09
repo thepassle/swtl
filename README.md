@@ -131,3 +131,33 @@ const obj = {
 };
 const template = html`<${Foo} ...${obj}/>`;
 ```
+
+### Iterables
+
+```js
+async function Bar() {
+  return html`<h2>bar</h2>`;
+}
+
+const stream = new ReadableStream({
+  start(controller) {
+    ['a', 'b', 'c'].forEach(s => controller.enqueue(s));
+    controller.close();
+  }
+});
+
+function* gen() {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+
+const template = html`
+  <main> 
+    ${fetch('/some.html')}
+    ${stream}
+    <${Bar}/>
+    ${gen()}
+  </main>
+`;
+```

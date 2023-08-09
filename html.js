@@ -253,6 +253,8 @@ export function html(statics, ...dynamics) {
   return htmlResult;
 }
 
+
+
 function Foo({bar}) {
   return html`
     <h1>foo ${bar}</h1>
@@ -261,8 +263,9 @@ function Foo({bar}) {
 
 const template = html`
   <${Foo} bar="${1}"/>
-  <${Foo} bar="${1}"/>
+  <${Foo} bar="${2}"/>
 `;
+
 
 const r = await renderToString(template);
 console.log(r);
@@ -294,3 +297,4 @@ console.log(r);
 //     ${gen()}
 //   </main>
 // `));
+
