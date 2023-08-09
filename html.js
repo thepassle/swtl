@@ -12,8 +12,6 @@ const SET_PROP = 'SET_PROP';
 const PROP_VAL = 'PROP_VAL';
 
 export function html(statics, ...dynamics) {
-  console.log(statics, dynamics);
-  // debugger;
   let mode = TEXT;
   let componentMode = NONE;
   let propMode = NONE;
