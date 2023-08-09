@@ -39,12 +39,12 @@ export async function* handle(chunk) {
     yield* handle(v);
   } else if (chunk instanceof Response && chunk.body) {
     yield* handleIterator(chunk.body);
-  } else if (Symbol.asyncIterator in chunk || Symbol.iterator in chunk) {
+  } else if (chunk[Symbol.asyncIterator] || chunk[Symbol.iterator]) {
     yield* chunk;
   } else if (chunk.kind === COMPONENT_SYMBOL) {
     yield* render(
       await chunk.fn({
-        ...chunk.properties,
+        ...chunk.properties.reduce((acc, prop) => ({...acc, [prop.name]: prop.value}), {}),
         children: chunk.children,
       })
     );
@@ -68,5 +68,6 @@ export async function renderToString(renderResult) {
     result += chunk;
   }
 
+  // @TODO remove replacing white spaces, just for local testing purposes
   return result.replaceAll(" ", "");
 }

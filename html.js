@@ -12,6 +12,8 @@ const SET_PROP = 'SET_PROP';
 const PROP_VAL = 'PROP_VAL';
 
 export function html(statics, ...dynamics) {
+  console.log(statics, dynamics);
+  // debugger;
   let mode = TEXT;
   let componentMode = NONE;
   let propMode = NONE;
@@ -253,37 +255,44 @@ export function html(statics, ...dynamics) {
   return htmlResult;
 }
 
-function Foo({children}) {
+function Foo({bar}) {
   return html`
-    <h1>foo</h1>
-    <main>${children}</main>
+    <h1>foo ${bar}</h1>
   `
 }
 
+const template = html`
+  <${Foo} bar="${1}"/>
+  <${Foo} bar="${1}"/>
+`;
 
-console.log('\n')
+const r = await renderToString(template);
+console.log(r);
 
-async function Bar() {
-  return html`<h2>bar</h2>`;
-}
 
-const stream = new ReadableStream({
-  start(controller) {
-    ['a', 'b', 'c'].forEach(s => controller.enqueue(s));
-    controller.close();
-  }
-});
+// console.log('\n')
 
-function* gen() {
-  yield 1;
-  yield 2;
-  yield 3;
-}
+// async function Bar() {
+//   return html`<h2>bar</h2>`;
+// }
 
-console.log(await renderToString(html`
-  <main> 
-    ${stream}
-    <${Bar}/>
-    ${gen()}
-  </main>
-`));
+// const stream = new ReadableStream({
+//   start(controller) {
+//     ['a', 'b', 'c'].forEach(s => controller.enqueue(s));
+//     controller.close();
+//   }
+// });
+
+// function* gen() {
+//   yield 1;
+//   yield 2;
+//   yield 3;
+// }
+
+// console.log(await renderToString(html`
+//   <main> 
+//     ${stream}
+//     <${Bar}/>
+//     ${gen()}
+//   </main>
+// `));
