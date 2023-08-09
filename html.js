@@ -75,7 +75,8 @@ export function html(statics, ...dynamics) {
               statics[i][j] !== '"' &&
               statics[i][j] !== "'" &&
               // @TODO whitespace?
-              statics[i][j] !== " "
+              statics[i][j] !== " " &&
+              property !== '...'
             ) {
               property += statics[i][j];
               j++;
@@ -104,7 +105,9 @@ export function html(statics, ...dynamics) {
               propMode = NONE;
             }
 
-            if (property) {
+            if (property === '...') {
+              component.properties.push(...Object.entries(dynamics[i]).map(([name,value])=> ({name, value})));
+            } else if (property) {
               component.properties.push({name: property, value: ''});
             }
           } else if (propMode === PROP_VAL) {
@@ -257,16 +260,30 @@ function Foo({children}) {
   `
 }
 
-function Bar() {
+
+console.log('\n')
+
+async function Bar() {
   return html`<h2>bar</h2>`;
 }
 
-console.log(renderToString(html`
-  <${Foo}>
+const stream = new ReadableStream({
+  start(controller) {
+    ['a', 'b', 'c'].forEach(s => controller.enqueue(s));
+    controller.close();
+  }
+});
+
+function* gen() {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+
+console.log(await renderToString(html`
+  <main> 
+    ${stream}
     <${Bar}/>
-    <h3>hi</h3>
-    <ul>
-      ${[1,2,3].map(i => html`<li>${i}</li>`)}
-    </ul>
-  <//>
+    ${gen()}
+  </main>
 `));

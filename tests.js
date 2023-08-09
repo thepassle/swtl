@@ -79,6 +79,16 @@ describe('properties', () => {
     assert.deepStrictEqual(result[0].properties, [{ name: 'bar', value: ''}]);
   });
 
+  it('spread', () => {
+    const result = html`<${Foo} ...${{a: 1, b: 2}}/>`;
+    assert.deepStrictEqual(result[0].properties, [{ name: 'a', value: 1}, {name: 'b', value: 2}]);
+  });
+
+  it('spread and regular string', () => {
+    const result = html`<${Foo} ...${{a: 1, b: 2}} bar="baz"/>`;
+    assert.deepStrictEqual(result[0].properties, [{ name: 'a', value: 1}, {name: 'b', value: 2}, {name: 'bar', value: 'baz'}]);
+  });
+
   describe('multiple', () => {
     it('strings double quote', () => {
       const result = html`<${Foo} bar="1" foo="2"/>`;
