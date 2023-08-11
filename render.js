@@ -34,6 +34,8 @@ async function* handleIterator(iterable) {
 export async function* handle(chunk) {
   if (typeof chunk === "string") {
     yield chunk;
+  } else if (Array.isArray(chunk)) {
+    yield* render(chunk);
   } else if (typeof chunk.then === "function") {
     const v = await chunk;
     yield* handle(v);
@@ -48,8 +50,6 @@ export async function* handle(chunk) {
         children: chunk.children,
       })
     );
-  } else if (Array.isArray(chunk)) {
-    yield* render(chunk);
   } else {
     yield chunk.toString();
   }
@@ -68,6 +68,5 @@ export async function renderToString(renderResult) {
     result += chunk;
   }
 
-  // @TODO remove replacing white spaces, just for local testing purposes
-  return result.replaceAll(" ", "");
+  return result;
 }

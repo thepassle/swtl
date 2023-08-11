@@ -1,19 +1,36 @@
 import { Router } from '../router.js';
 import { html } from '../html.js';
+import { HtmlPage } from './pages/HtmlPage.js';
 
-function HtmlPage({children}) {
-  return html`<html><body>${children}</body></html>`
+async function* generator() {
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  yield html`<li>1</li>`;
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  yield html`<li>2</li>`;
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  yield html`<li>3</li>`;
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  yield html`<li>4</li>`;
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  yield html`<li>5</li>`;
 }
 
 const router = new Router({
   routes: [
     {
       path: '/',
-      render: () => html`<${HtmlPage}><h1>Home</h1><//>`
+      render: ({params, query, request}) => html`
+        <${HtmlPage} title="Home">
+          <h1>Home</h1>
+          <ul>
+            ${generator()}
+          </ul>
+        <//>
+      `
     },
     {
       path: '/foo',
-      render: () => html`<${HtmlPage}><h1>Foo</h1><//>`
+      render: ({params, query, request}) => html`<${HtmlPage}><h1>Foo</h1><//>`
     },
   ]
 });

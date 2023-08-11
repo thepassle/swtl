@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
-import { html } from './html.js';
-import { COMPONENT_SYMBOL } from './symbol.js';
+import { html } from '../html.js';
+import { COMPONENT_SYMBOL } from '../symbol.js';
 
 function Foo() {}
 function Bar() {
@@ -207,7 +207,7 @@ describe('children', () => {
           children: [],
           kind: COMPONENT_SYMBOL
         },
-        '    '
+        '\n    '
       ]);
   });
 });

@@ -12,9 +12,21 @@ const SET_PROP = 'SET_PROP';
 const PROP_VAL = 'PROP_VAL';
 
 export function html(statics, ...dynamics) {
-  let mode = TEXT;
-  let componentMode = NONE;
-  let propMode = NONE;
+  /**
+   * If no dynamics, just return statics
+   */
+  if (!dynamics.length) {
+    return statics;
+  /**
+   * If no Components, just stitch statics and dynamics together
+   */
+  } else if (!dynamics.some(d => typeof d === 'function')) {
+    return statics.reduce((acc, s, i) => [...acc, s, ...(dynamics[i] ? [dynamics[i]] : [])], []);
+  }
+
+  let MODE = TEXT;
+  let COMPONENT_MODE = NONE;
+  let PROP_MODE = NONE;
 
   const htmlResult = [];
   const componentStack = [];
@@ -45,9 +57,8 @@ export function html(statics, ...dynamics) {
      */
     for (let j = 0; j < statics[i].length; j++) {
       let c = statics[i][j];
-      result = result.replace(/^\s*\n\s*|\s*\n\s*$/g,'');
 
-      if (mode === TEXT) {
+      if (MODE === TEXT) {
         if (
           c === "<" &&
           /**
@@ -56,17 +67,17 @@ export function html(statics, ...dynamics) {
            */
           !statics[i][j + 1] && typeof dynamics[i] === "function"
         ) {
-          mode = COMPONENT;
+          MODE = COMPONENT;
           component.fn = dynamics[i];
           componentStack.push(component);
         } else {
           result += c;
         }
-      } else if (mode === COMPONENT) {
-        if (componentMode === PROP) {
+      } else if (MODE === COMPONENT) {
+        if (COMPONENT_MODE === PROP) {
           const component = componentStack[componentStack.length - 1];
           const property = component.properties[component.properties.length - 1];
-          if (propMode === SET_PROP) {
+          if (PROP_MODE === SET_PROP) {
             let property = "";
             while (
               statics[i][j] !== "=" &&
@@ -87,22 +98,22 @@ export function html(statics, ...dynamics) {
              *                     ^
              */
             if (statics[i][j] === "=") {
-              propMode = PROP_VAL;
+              PROP_MODE = PROP_VAL;
               /**
                * @example <${Foo} foo/>
                *                     ^
                */
-            } else if (statics[i][j] === "/" && componentMode === PROP) {
-              componentMode = NONE;
-              propMode = NONE;
+            } else if (statics[i][j] === "/" && COMPONENT_MODE === PROP) {
+              COMPONENT_MODE = NONE;
+              PROP_MODE = NONE;
               componentStack.pop();
               /**
                * @example <${Foo} foo>children</a>
                *                     ^
                */
-            } else if (statics[i][j] === ">" && componentMode === PROP) {
-              componentMode = CHILDREN;
-              propMode = NONE;
+            } else if (statics[i][j] === ">" && COMPONENT_MODE === PROP) {
+              COMPONENT_MODE = CHILDREN;
+              PROP_MODE = NONE;
             }
 
             if (property === '...') {
@@ -110,7 +121,7 @@ export function html(statics, ...dynamics) {
             } else if (property) {
               component.properties.push({name: property, value: ''});
             }
-          } else if (propMode === PROP_VAL) {
+          } else if (PROP_MODE === PROP_VAL) {
             /**
              * @example <${Foo} bar='hi'>
              *                      ^
@@ -129,7 +140,7 @@ export function html(statics, ...dynamics) {
                */
               if (!statics[i][j + 1]) {
                 property.value = dynamics[i];
-                propMode = SET_PROP;
+                PROP_MODE = SET_PROP;
               } else {
                 /**
                  * @example <${Foo} bar="hi">
@@ -145,7 +156,7 @@ export function html(statics, ...dynamics) {
                 }
 
                 property.value = val || '';
-                propMode = SET_PROP;
+                PROP_MODE = SET_PROP;
               }
               /**
                * @example <${Foo} bar=${1}>
@@ -153,7 +164,7 @@ export function html(statics, ...dynamics) {
                */
             } else if (!statics[i][j - 1]) {
               property.value = dynamics[i - 1];
-              propMode = SET_PROP;
+              PROP_MODE = SET_PROP;
             } else {
               /**
                * @example <${Foo} bar=hi>
@@ -174,10 +185,10 @@ export function html(statics, ...dynamics) {
               }
 
               property.value = val || '';
-              propMode = SET_PROP;
+              PROP_MODE = SET_PROP;
             }
           }
-        } else if (componentMode === CHILDREN) {
+        } else if (COMPONENT_MODE === CHILDREN) {
           const currentComponent = componentStack[componentStack.length - 1];
 
           /**
@@ -190,14 +201,14 @@ export function html(statics, ...dynamics) {
             }
 
             if (!componentStack.length) {
-              mode = TEXT;
-              componentMode = NONE;
+              MODE = TEXT;
+              COMPONENT_MODE = NONE;
             }
             componentStack.pop();
             j += 3;
           } else if (statics[i][j] === '<' && typeof dynamics[i] === 'function') {
-            componentMode = PROP;
-            propMode = SET_PROP;
+            COMPONENT_MODE = PROP;
+            PROP_MODE = SET_PROP;
             component.fn = dynamics[i];
             componentStack.push(component);
           } else if (!statics[i][j+1]) {
@@ -215,15 +226,15 @@ export function html(statics, ...dynamics) {
           }
 
         } else if (c === ">") {
-          componentMode = CHILDREN;
+          COMPONENT_MODE = CHILDREN;
           // @TODO whitespace?
         } else if (c === " ") {
-          componentMode = PROP;
-          propMode = SET_PROP;
+          COMPONENT_MODE = PROP;
+          PROP_MODE = SET_PROP;
           // self closing tag
         } else if (c === "/" && statics[i][j + 1] === ">") {
-          mode = TEXT;
-          componentMode = NONE;
+          MODE = TEXT;
+          COMPONENT_MODE = NONE;
           componentStack.pop();
           j++;
         } else {
@@ -234,18 +245,18 @@ export function html(statics, ...dynamics) {
       }
     }
 
-    if (result && componentMode !== CHILDREN) {
+    if (result && COMPONENT_MODE !== CHILDREN) {
       htmlResult.push(result);
     }
 
-    if (component.fn && componentMode !== CHILDREN && componentStack.length === 1) {
+    if (component.fn && COMPONENT_MODE !== CHILDREN && componentStack.length === 1) {
       htmlResult.push(component);
     } else if(componentStack.length && component.fn) {
       componentStack[componentStack.length - 2].children.push(component)
     }
 
     // We're at the end of statics, now process dynamics if there are any
-    if (dynamics[i] && mode !== COMPONENT) {
+    if (dynamics[i] && MODE !== COMPONENT) {
       htmlResult.push(dynamics[i]);
     }
   }
@@ -298,3 +309,36 @@ export function html(statics, ...dynamics) {
 //   </main>
 // `));
 
+// function Baz() {}
+
+// html`1 <${Baz}/> 2`;
+
+// In tests I can just add an `unwrap` function
+
+function unwrap(generator) {
+  const result = [];
+
+  let next = generator.next();
+  while(!next.done) {
+    result.push(next.value);
+    next = generator.next();
+  }
+
+  return result;
+}
+
+function* html2(statics, ...dynamics) {
+  for(let i = 0; i < statics.length; i++) {
+    yield statics[i];
+    if(dynamics[i]) {
+      yield dynamics[i];
+    }
+  }
+}
+
+// const template = html2`1 ${2} 3`;
+const template = [1,2,3];
+
+for(const chunk of template) {
+  console.log(chunk);
+}

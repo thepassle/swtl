@@ -7,8 +7,8 @@ export class Router {
       urlPattern: new URLPattern({
         pathname: route.path,
         baseURL: self.location.origin,
-        search: "*",
-        hash: "*",
+        search: '*',
+        hash: '*',
       })
     }));
   }
@@ -22,7 +22,7 @@ export class Router {
         const query = Object.fromEntries(new URLSearchParams(request.url.search));
         const params = match?.pathname?.groups ?? {};
 
-        const iterator = render(route.render({query, params}));
+        const iterator = render(route.render({query, params, request}));
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
           async pull(controller) {
@@ -39,13 +39,13 @@ export class Router {
         return new Response(stream, { 
           status: 200,
           headers: { 
-            "Content-Type": "text/html", 
+            'Content-Type': 'text/html', 
             'Transfer-Encoding': 'chunked', 
           } 
         });
       }
     }
 
-    return new Response("Not Found", { status: 404 });
+    return new Response('Not Found', { status: 404 });
   }
 }

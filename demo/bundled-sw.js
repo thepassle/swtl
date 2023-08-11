@@ -1,4 +1,8 @@
 (() => {
+  var __freeze = Object.freeze;
+  var __defProp = Object.defineProperty;
+  var __template = (cooked, raw) => __freeze(__defProp(cooked, "raw", { value: __freeze(raw || cooked.slice()) }));
+
   // symbol.js
   var COMPONENT_SYMBOL = Symbol("component");
 
@@ -34,6 +38,8 @@
   async function* handle(chunk) {
     if (typeof chunk === "string") {
       yield chunk;
+    } else if (Array.isArray(chunk)) {
+      yield* render(chunk);
     } else if (typeof chunk.then === "function") {
       const v = await chunk;
       yield* handle(v);
@@ -48,14 +54,12 @@
           children: chunk.children
         })
       );
-    } else if (Array.isArray(chunk)) {
-      yield* render(chunk);
     } else {
       yield chunk.toString();
     }
   }
-  async function* render(template) {
-    for (const chunk of template) {
+  async function* render(template2) {
+    for (const chunk of template2) {
       yield* handle(chunk);
     }
   }
@@ -80,7 +84,7 @@
         if (match) {
           const query = Object.fromEntries(new URLSearchParams(request.url.search));
           const params = match?.pathname?.groups ?? {};
-          const iterator = render(route.render({ query, params }));
+          const iterator = render(route.render({ query, params, request }));
           const encoder = new TextEncoder();
           const stream = new ReadableStream({
             async pull(controller) {
@@ -114,6 +118,11 @@
   var SET_PROP = "SET_PROP";
   var PROP_VAL = "PROP_VAL";
   function html(statics, ...dynamics) {
+    if (!dynamics.length) {
+      return statics;
+    } else if (!dynamics.some((d) => typeof d === "function")) {
+      return statics.reduce((acc, s, i) => [...acc, s, ...dynamics[i] ? [dynamics[i]] : []], []);
+    }
     let mode = TEXT;
     let componentMode = NONE;
     let propMode = NONE;
@@ -129,7 +138,6 @@
       };
       for (let j = 0; j < statics[i].length; j++) {
         let c = statics[i][j];
-        result = result.replace(/^\s*\n\s*|\s*\n\s*$/g, "");
         if (mode === TEXT) {
           if (c === "<" && /**
            * @example <${Foo}>
@@ -254,20 +262,57 @@
     }
     return htmlResult;
   }
+  function Baz() {
+  }
+  html`1 <${Baz}/> 2`;
+  function* html2(statics, ...dynamics) {
+    for (let i = 0; i < statics.length; i++) {
+      yield statics[i];
+      if (dynamics[i]) {
+        yield dynamics[i];
+      }
+    }
+  }
+  var template = html2`1 ${2} 3`;
+  for (const chunk of template) {
+    console.log(chunk);
+  }
+
+  // demo/pages/HtmlPage.js
+  var _a;
+  function HtmlPage({ children, title }) {
+    return html(_a || (_a = __template(['\n    <html lang="en">\n      <head>\n        <meta charset="utf-8" />\n        <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n        <meta name="Description" content="">\n        <title>', "</title>\n      </head>\n      <body>\n        ", "\n        <script>\n          let refreshing;\n          async function handleUpdate() {\n            // check to see if there is a current active service worker\n            const oldSw = (await navigator.serviceWorker.getRegistration())?.active?.state;\n\n            navigator.serviceWorker.addEventListener('controllerchange', async () => {\n              if (refreshing) return;\n\n              // when the controllerchange event has fired, we get the new service worker\n              const newSw = (await navigator.serviceWorker.getRegistration())?.active?.state;\n\n              // if there was already an old activated service worker, and a new activating service worker, do the reload\n              if (oldSw === 'activated' && newSw === 'activating') {\n                refreshing = true;\n                window.location.reload();\n              }\n            });\n          }\n\n          handleUpdate();\n        <\/script>\n      </body>\n    </html>\n  "])), title ?? "", children);
+  }
 
   // demo/sw.js
-  function HtmlPage({ children }) {
-    return html`<html><body>${children}</body></html>`;
+  async function* generator() {
+    await new Promise((resolve) => setTimeout(resolve, 1e3));
+    yield html`<li>1</li>`;
+    await new Promise((resolve) => setTimeout(resolve, 1e3));
+    yield html`<li>2</li>`;
+    await new Promise((resolve) => setTimeout(resolve, 1e3));
+    yield html`<li>3</li>`;
+    await new Promise((resolve) => setTimeout(resolve, 1e3));
+    yield html`<li>4</li>`;
+    await new Promise((resolve) => setTimeout(resolve, 1e3));
+    yield html`<li>5</li>`;
   }
   var router = new Router({
     routes: [
       {
         path: "/",
-        render: () => html`<${HtmlPage}><h1>Home</h1><//>`
+        render: ({ params, query, request }) => html`
+        <${HtmlPage} title="Home">
+          <h1>Home</h1>
+          <ul>
+            ${generator()}
+          </ul>
+        <//>
+      `
       },
       {
         path: "/foo",
-        render: () => html`<${HtmlPage}><h1>Foo</h1><//>`
+        render: ({ params, query, request }) => html`<${HtmlPage}><h1>Foo</h1><//>`
       }
     ]
   });
