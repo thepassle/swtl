@@ -55,9 +55,8 @@ export async function* handle(chunk) {
   }
 }
 
-export async function* render(template) {
+export function* render(template) {
   for (const chunk of template) {
-    await new Promise(resolve => setTimeout(resolve, 100));
     yield* handle(chunk);
   }
 }
