@@ -58,7 +58,7 @@
       yield chunk.toString();
     }
   }
-  function* render(template) {
+  async function* render(template) {
     for (const chunk of template) {
       yield* handle(chunk);
     }
