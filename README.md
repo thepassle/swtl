@@ -29,7 +29,7 @@ const router = new Router({
         <${HtmlPage} title="Home">
           <h1>Home</h1>
           <nav>
-            <${BreadCrumbs} path=${event.request.url.pathname}/>
+            <${BreadCrumbs} path=${request.url.pathname}/>
           </nav>
           ${fetch('./some-partial.html')}
           ${caches.match('./another-partial.html')}
