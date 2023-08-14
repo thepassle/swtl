@@ -3,16 +3,21 @@ import { html } from '../html.js';
 import { HtmlPage } from './pages/HtmlPage.js';
 
 async function* generator() {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  yield* html`<li>1</li>`;
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  yield* html`<li>2</li>`;
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  yield* html`<li>3</li>`;
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  yield* html`<li>4</li>`;
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  yield* html`<li>5</li>`;
+  let i = 0;
+  while(i < 2000) {
+    i++;
+    yield* html`<li>${i}</li>`;
+  }
+  // await new Promise(resolve => setTimeout(resolve, 1000));
+  // yield* html`<li>1</li>`;
+  // await new Promise(resolve => setTimeout(resolve, 1000));
+  // yield* html`<li>2</li>`;
+  // await new Promise(resolve => setTimeout(resolve, 1000));
+  // yield* html`<li>3</li>`;
+  // await new Promise(resolve => setTimeout(resolve, 1000));
+  // yield* html`<li>4</li>`;
+  // await new Promise(resolve => setTimeout(resolve, 1000));
+  // yield* html`<li>5</li>`;
 }
 
 function Bar() {

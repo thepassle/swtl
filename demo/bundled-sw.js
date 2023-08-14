@@ -294,16 +294,11 @@
 
   // demo/sw.js
   async function* generator() {
-    await new Promise((resolve) => setTimeout(resolve, 1e3));
-    yield* html`<li>1</li>`;
-    await new Promise((resolve) => setTimeout(resolve, 1e3));
-    yield* html`<li>2</li>`;
-    await new Promise((resolve) => setTimeout(resolve, 1e3));
-    yield* html`<li>3</li>`;
-    await new Promise((resolve) => setTimeout(resolve, 1e3));
-    yield* html`<li>4</li>`;
-    await new Promise((resolve) => setTimeout(resolve, 1e3));
-    yield* html`<li>5</li>`;
+    let i = 0;
+    while (i < 2e3) {
+      i++;
+      yield* html`<li>${i}</li>`;
+    }
   }
   function Baz({ children }) {
     return html`<h3>baz ${children}</h3>`;

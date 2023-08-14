@@ -186,3 +186,7 @@ const result = await renderToString(html`<h1>${1}</h1>`);
 ## Acknowledgements
 
 Inspired by libraries like [`preact/htm`](https://github.com/developit/htm) and [`lit-html`](https://github.com/lit/lit).
+
+And [`Astro`](https://github.com/withastro/astro) for doing the hard work of implementing the rendering logic back when I requested this to be supported in Astro.
+
+❤️
