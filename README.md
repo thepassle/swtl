@@ -110,8 +110,9 @@ html`<${Heading}/>`
 /**
  * Properties and spread
  */
-function MyComponent({foo, baz, qux}) {
+function MyComponent({foo, title, baz, qux}) {
   return html`
+    <h1>${title}</h1>
     <div>${foo}</div>
     <div>${baz} ${qux}</div>
   `;
@@ -122,7 +123,13 @@ const object = {
   qux: 'world',
 }
 
-html`<${MyComponent} foo=${1} ...bar=${object}/>`;
+html`<${MyComponent} title="hello" foo=${1} ...bar=${object}/>`;
+
+/** 
+ * Note that quotes are optional when using expressions, the following is also fine:
+ * foo="${1}"
+ * ...bar="${object}"
+ */
 ```
 
 ### Iterables/Responses
@@ -138,8 +145,8 @@ const stream = new ReadableStream({
 });
 
 function* gen() {
-  yield '<li>1</li>;
-  yield '<li>2</li>;
+  yield '<li>1</li>';
+  yield '<li>2</li>';
   yield '<li>3</li>';
 }
 
