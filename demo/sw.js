@@ -4,15 +4,22 @@ import { HtmlPage } from './pages/HtmlPage.js';
 
 async function* generator() {
   await new Promise(resolve => setTimeout(resolve, 1000));
-  yield html`<li>1</li>`;
+  yield* html`<li>1</li>`;
   await new Promise(resolve => setTimeout(resolve, 1000));
-  yield html`<li>2</li>`;
+  yield* html`<li>2</li>`;
   await new Promise(resolve => setTimeout(resolve, 1000));
-  yield html`<li>3</li>`;
+  yield* html`<li>3</li>`;
   await new Promise(resolve => setTimeout(resolve, 1000));
-  yield html`<li>4</li>`;
+  yield* html`<li>4</li>`;
   await new Promise(resolve => setTimeout(resolve, 1000));
-  yield html`<li>5</li>`;
+  yield* html`<li>5</li>`;
+}
+
+function Bar() {
+  return html`<h2>bar</h2>`
+}
+function Baz({children}) {
+  return html`<h3>baz ${children}</h3>`
 }
 
 const router = new Router({
@@ -31,6 +38,41 @@ const router = new Router({
     {
       path: '/foo',
       render: ({params, query, request}) => html`<${HtmlPage}><h1>Foo</h1><//>`
+    },
+    {
+      path: '/bar',
+      render: ({params, query, request}) => html`<${HtmlPage}>
+        <${Baz}>abc<//>
+        efg
+      <//>`
+    },
+    {
+      path: '/baz',
+      render: ({params, query, request}) => html`
+        <${HtmlPage}>
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+        <//>
+      `
     },
   ]
 });

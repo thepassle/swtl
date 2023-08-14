@@ -1,12 +1,12 @@
 {
-  "name": "sw-dsl-thing",
+  "name": "swtl",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "esbuild ./demo/sw.js --bundle --outfile=./demo/bundled-sw.js --watch --format=iife",
-    "start": "node --watch html.js",
+    "dev": "concurrently \"esbuild ./demo/sw.js --bundle --outfile=./demo/bundled-sw.js --watch --format=iife\" \"cd demo && npx http-server -o\"",    
+    "start": "node --watch dev.js",
     "test": "node --watch tests/tests.js"
   },
   "exports": {
@@ -14,10 +14,17 @@
     "./render.js": "./render.js",
     "./router.js": "./router.js"
   },
+  "files": [
+    "html.js",
+    "render.js",
+    "router.js",
+    "symbol.js"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "concurrently": "^8.2.0",
     "esbuild": "^0.19.0"
   }
 }

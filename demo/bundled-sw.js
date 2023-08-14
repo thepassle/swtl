@@ -58,8 +58,9 @@
       yield chunk.toString();
     }
   }
-  async function* render(template2) {
-    for (const chunk of template2) {
+  async function* render(template) {
+    for (const chunk of template) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
       yield* handle(chunk);
     }
   }
@@ -117,16 +118,17 @@
   var CHILDREN = "CHILDREN";
   var SET_PROP = "SET_PROP";
   var PROP_VAL = "PROP_VAL";
-  function html(statics, ...dynamics) {
+  function* html(statics, ...dynamics) {
     if (!dynamics.length) {
-      return statics;
+      yield* statics;
+      return;
     } else if (!dynamics.some((d) => typeof d === "function")) {
-      return statics.reduce((acc, s, i) => [...acc, s, ...dynamics[i] ? [dynamics[i]] : []], []);
+      yield* statics.reduce((acc, s, i) => [...acc, s, ...dynamics[i] ? [dynamics[i]] : []], []);
+      return;
     }
-    let mode = TEXT;
-    let componentMode = NONE;
-    let propMode = NONE;
-    const htmlResult = [];
+    let MODE = TEXT;
+    let COMPONENT_MODE = NONE;
+    let PROP_MODE = NONE;
     const componentStack = [];
     for (let i = 0; i < statics.length; i++) {
       let result = "";
@@ -138,50 +140,53 @@
       };
       for (let j = 0; j < statics[i].length; j++) {
         let c = statics[i][j];
-        if (mode === TEXT) {
+        if (MODE === TEXT) {
           if (c === "<" && /**
            * @example <${Foo}>
            *           ^
            */
           !statics[i][j + 1] && typeof dynamics[i] === "function") {
-            mode = COMPONENT;
+            MODE = COMPONENT;
             component.fn = dynamics[i];
             componentStack.push(component);
           } else {
             result += c;
           }
-        } else if (mode === COMPONENT) {
-          if (componentMode === PROP) {
+        } else if (MODE === COMPONENT) {
+          if (COMPONENT_MODE === PROP) {
             const component2 = componentStack[componentStack.length - 1];
-            const property = component2.properties[component2.properties.length - 1];
-            if (propMode === SET_PROP) {
+            const property = component2?.properties[component2.properties.length - 1];
+            if (PROP_MODE === SET_PROP) {
               let property2 = "";
-              while (statics[i][j] !== "=" && statics[i][j] !== "/" && statics[i][j] !== ">" && statics[i][j] !== '"' && statics[i][j] !== "'" && // @TODO whitespace?
-              statics[i][j] !== " " && property2 !== "...") {
+              while (statics[i][j] !== "=" && statics[i][j] !== "/" && statics[i][j] !== ">" && statics[i][j] !== '"' && statics[i][j] !== "'" && statics[i][j] !== " " && property2 !== "...") {
                 property2 += statics[i][j];
                 j++;
               }
               if (statics[i][j] === "=") {
-                propMode = PROP_VAL;
-              } else if (statics[i][j] === "/" && componentMode === PROP) {
-                componentMode = NONE;
-                propMode = NONE;
-                componentStack.pop();
-              } else if (statics[i][j] === ">" && componentMode === PROP) {
-                componentMode = CHILDREN;
-                propMode = NONE;
+                PROP_MODE = PROP_VAL;
+              } else if (statics[i][j] === "/" && COMPONENT_MODE === PROP) {
+                COMPONENT_MODE = NONE;
+                PROP_MODE = NONE;
+                const component3 = componentStack.pop();
+                if (!componentStack.length) {
+                  result = "";
+                  yield component3;
+                }
+              } else if (statics[i][j] === ">" && COMPONENT_MODE === PROP) {
+                COMPONENT_MODE = CHILDREN;
+                PROP_MODE = NONE;
               }
               if (property2 === "...") {
                 component2.properties.push(...Object.entries(dynamics[i]).map(([name, value]) => ({ name, value })));
               } else if (property2) {
                 component2.properties.push({ name: property2, value: "" });
               }
-            } else if (propMode === PROP_VAL) {
+            } else if (PROP_MODE === PROP_VAL) {
               if (statics[i][j] === '"' || statics[i][j] === "'") {
                 const quote = statics[i][j];
                 if (!statics[i][j + 1]) {
                   property.value = dynamics[i];
-                  propMode = SET_PROP;
+                  PROP_MODE = SET_PROP;
                 } else {
                   let val = "";
                   j++;
@@ -190,11 +195,17 @@
                     j++;
                   }
                   property.value = val || "";
-                  propMode = SET_PROP;
+                  PROP_MODE = SET_PROP;
                 }
               } else if (!statics[i][j - 1]) {
                 property.value = dynamics[i - 1];
-                propMode = SET_PROP;
+                PROP_MODE = SET_PROP;
+                if (statics[i][j] === "/") {
+                  const component3 = componentStack.pop();
+                  if (!componentStack.length) {
+                    yield component3;
+                  }
+                }
               } else {
                 let val = "";
                 while (statics[i][j] !== " " && statics[i][j] !== "/" && statics[i][j] !== ">") {
@@ -202,24 +213,36 @@
                   j++;
                 }
                 property.value = val || "";
-                propMode = SET_PROP;
+                PROP_MODE = SET_PROP;
+                if (statics[i][j] === "/") {
+                  const component3 = componentStack.pop();
+                  if (!componentStack.length) {
+                    yield component3;
+                  }
+                }
               }
             }
-          } else if (componentMode === CHILDREN) {
+          } else if (COMPONENT_MODE === CHILDREN) {
             const currentComponent = componentStack[componentStack.length - 1];
             if (statics[i][j + 1] === "/" && statics[i][j + 2] === "/") {
               if (result) {
                 currentComponent.children.push(result);
+                result = "";
               }
-              if (!componentStack.length) {
-                mode = TEXT;
-                componentMode = NONE;
-              }
-              componentStack.pop();
               j += 3;
+              const component2 = componentStack.pop();
+              if (!componentStack.length) {
+                MODE = TEXT;
+                COMPONENT_MODE = NONE;
+                yield component2;
+              }
             } else if (statics[i][j] === "<" && typeof dynamics[i] === "function") {
-              componentMode = PROP;
-              propMode = SET_PROP;
+              if (result) {
+                currentComponent.children.push(result);
+                result = "";
+              }
+              COMPONENT_MODE = PROP;
+              PROP_MODE = SET_PROP;
               component.fn = dynamics[i];
               componentStack.push(component);
             } else if (!statics[i][j + 1]) {
@@ -232,14 +255,18 @@
               result += statics[i][j];
             }
           } else if (c === ">") {
-            componentMode = CHILDREN;
+            COMPONENT_MODE = CHILDREN;
           } else if (c === " ") {
-            componentMode = PROP;
-            propMode = SET_PROP;
+            COMPONENT_MODE = PROP;
+            PROP_MODE = SET_PROP;
           } else if (c === "/" && statics[i][j + 1] === ">") {
-            mode = TEXT;
-            componentMode = NONE;
-            componentStack.pop();
+            MODE = TEXT;
+            COMPONENT_MODE = NONE;
+            const component2 = componentStack.pop();
+            if (!componentStack.length) {
+              result = "";
+              yield component2;
+            }
             j++;
           } else {
             result += c;
@@ -248,34 +275,16 @@
           result += c;
         }
       }
-      if (result && componentMode !== CHILDREN) {
-        htmlResult.push(result);
+      if (result && COMPONENT_MODE !== CHILDREN) {
+        yield result;
       }
-      if (component.fn && componentMode !== CHILDREN && componentStack.length === 1) {
-        htmlResult.push(component);
-      } else if (componentStack.length && component.fn) {
+      if (componentStack.length > 1 && component.fn) {
         componentStack[componentStack.length - 2].children.push(component);
       }
-      if (dynamics[i] && mode !== COMPONENT) {
-        htmlResult.push(dynamics[i]);
-      }
-    }
-    return htmlResult;
-  }
-  function Baz() {
-  }
-  html`1 <${Baz}/> 2`;
-  function* html2(statics, ...dynamics) {
-    for (let i = 0; i < statics.length; i++) {
-      yield statics[i];
-      if (dynamics[i]) {
+      if (dynamics[i] && MODE !== COMPONENT) {
         yield dynamics[i];
       }
     }
-  }
-  var template = html2`1 ${2} 3`;
-  for (const chunk of template) {
-    console.log(chunk);
   }
 
   // demo/pages/HtmlPage.js
@@ -287,15 +296,18 @@
   // demo/sw.js
   async function* generator() {
     await new Promise((resolve) => setTimeout(resolve, 1e3));
-    yield html`<li>1</li>`;
+    yield* html`<li>1</li>`;
     await new Promise((resolve) => setTimeout(resolve, 1e3));
-    yield html`<li>2</li>`;
+    yield* html`<li>2</li>`;
     await new Promise((resolve) => setTimeout(resolve, 1e3));
-    yield html`<li>3</li>`;
+    yield* html`<li>3</li>`;
     await new Promise((resolve) => setTimeout(resolve, 1e3));
-    yield html`<li>4</li>`;
+    yield* html`<li>4</li>`;
     await new Promise((resolve) => setTimeout(resolve, 1e3));
-    yield html`<li>5</li>`;
+    yield* html`<li>5</li>`;
+  }
+  function Baz({ children }) {
+    return html`<h3>baz ${children}</h3>`;
   }
   var router = new Router({
     routes: [
@@ -313,6 +325,41 @@
       {
         path: "/foo",
         render: ({ params, query, request }) => html`<${HtmlPage}><h1>Foo</h1><//>`
+      },
+      {
+        path: "/bar",
+        render: ({ params, query, request }) => html`<${HtmlPage}>
+        <${Baz}>abc<//>
+        efg
+      <//>`
+      },
+      {
+        path: "/baz",
+        render: ({ params, query, request }) => html`
+        <${HtmlPage}>
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+          <${Baz}>abc<//>
+          <h3>hello</h3>
+          ${1}
+        <//>
+      `
       }
     ]
   });
