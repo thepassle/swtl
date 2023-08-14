@@ -31,6 +31,8 @@ const router = new Router({
           <nav>
             <${BreadCrumbs} path=${event.request.url.pathname}/>
           </nav>
+          ${fetch('./some-partial.html')}
+          ${caches.match('./another-partial.html')}
           <ul>
             ${['foo', 'bar', 'baz'].map(i => html`<li>${i}</li>`)}
           </ul>
