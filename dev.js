@@ -46,8 +46,8 @@ function Baz({children}) {
 // const r = await renderToString(t);
 // console.log(9999, r);
 
-const r = await renderToString(html`<${Baz}>123 <${Bar}/> 789<//>`);
-console.log(r);
+// const r = await renderToString(html`<${Baz}>123 <${Bar}/> 789<//>`);
+// console.log(r);
 
 // const template = html`
 //   <${Foo} bar="${1}"/>

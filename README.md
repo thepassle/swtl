@@ -58,24 +58,26 @@ Uses [URLPattern](https://developer.mozilla.org/en-US/docs/Web/API/URLPattern) i
 import { Router } from 'swtl/router.js';
 import { html } from 'swtl/html.js';
 
-const router = new Router([
-  {
-    path: '/',
-    render: () => html`<h1>Home</h1>`
-  },
-  {
-    path: '/:foo',
-    render: ({params}) => html`<h1>${params.foo}</h1>`
-  },
-  {
-    path: '/:foo/:bar',
-    render: ({params}) => html`<h1>${params.foo}/${params.bar}</h1>`
-  },
-  {
-    path: '/:foo/:bar',
-    render: ({params, query, request}) => html`<h1>${params.foo}/${params.bar}</h1>`
-  },
-]);
+const router = new Router({
+  routes: [
+    {
+      path: '/',
+      render: () => html`<h1>Home</h1>`
+    },
+    {
+      path: '/:foo',
+      render: ({params}) => html`<h1>${params.foo}</h1>`
+    },
+    {
+      path: '/:foo/:bar',
+      render: ({params}) => html`<h1>${params.foo}/${params.bar}</h1>`
+    },
+    {
+      path: '/:foo/:bar',
+      render: ({params, query, request}) => html`<h1>${params.foo}/${params.bar}</h1>`
+    },
+  ]
+});
 
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
