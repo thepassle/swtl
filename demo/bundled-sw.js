@@ -120,168 +120,167 @@
   function* html(statics, ...dynamics) {
     if (!dynamics.length) {
       yield* statics;
-      return;
     } else if (!dynamics.some((d) => typeof d === "function")) {
       yield* statics.reduce((acc, s, i) => [...acc, s, ...dynamics[i] ? [dynamics[i]] : []], []);
-      return;
-    }
-    let MODE = TEXT;
-    let COMPONENT_MODE = NONE;
-    let PROP_MODE = NONE;
-    const componentStack = [];
-    for (let i = 0; i < statics.length; i++) {
-      let result = "";
-      const component = {
-        kind: COMPONENT_SYMBOL,
-        properties: [],
-        children: [],
-        fn: void 0
-      };
-      for (let j = 0; j < statics[i].length; j++) {
-        let c = statics[i][j];
-        if (MODE === TEXT) {
-          if (c === "<" && /**
-           * @example <${Foo}>
-           *           ^
-           */
-          !statics[i][j + 1] && typeof dynamics[i] === "function") {
-            MODE = COMPONENT;
-            component.fn = dynamics[i];
-            componentStack.push(component);
-          } else {
-            result += c;
-          }
-        } else if (MODE === COMPONENT) {
-          if (COMPONENT_MODE === PROP) {
-            const component2 = componentStack[componentStack.length - 1];
-            const property = component2?.properties[component2.properties.length - 1];
-            if (PROP_MODE === SET_PROP) {
-              let property2 = "";
-              while (statics[i][j] !== "=" && statics[i][j] !== "/" && statics[i][j] !== ">" && statics[i][j] !== '"' && statics[i][j] !== "'" && statics[i][j] !== " " && property2 !== "...") {
-                property2 += statics[i][j];
-                j++;
-              }
-              if (statics[i][j] === "=") {
-                PROP_MODE = PROP_VAL;
-              } else if (statics[i][j] === "/" && COMPONENT_MODE === PROP) {
-                COMPONENT_MODE = NONE;
-                PROP_MODE = NONE;
-                const component3 = componentStack.pop();
-                if (!componentStack.length) {
-                  result = "";
-                  yield component3;
+    } else {
+      let MODE = TEXT;
+      let COMPONENT_MODE = NONE;
+      let PROP_MODE = NONE;
+      const componentStack = [];
+      for (let i = 0; i < statics.length; i++) {
+        let result = "";
+        const component = {
+          kind: COMPONENT_SYMBOL,
+          properties: [],
+          children: [],
+          fn: void 0
+        };
+        for (let j = 0; j < statics[i].length; j++) {
+          let c = statics[i][j];
+          if (MODE === TEXT) {
+            if (c === "<" && /**
+             * @example <${Foo}>
+             *           ^
+             */
+            !statics[i][j + 1] && typeof dynamics[i] === "function") {
+              MODE = COMPONENT;
+              component.fn = dynamics[i];
+              componentStack.push(component);
+            } else {
+              result += c;
+            }
+          } else if (MODE === COMPONENT) {
+            if (COMPONENT_MODE === PROP) {
+              const component2 = componentStack[componentStack.length - 1];
+              const property = component2?.properties[component2.properties.length - 1];
+              if (PROP_MODE === SET_PROP) {
+                let property2 = "";
+                while (statics[i][j] !== "=" && statics[i][j] !== "/" && statics[i][j] !== ">" && statics[i][j] !== '"' && statics[i][j] !== "'" && statics[i][j] !== " " && property2 !== "...") {
+                  property2 += statics[i][j];
+                  j++;
                 }
-              } else if (statics[i][j] === ">" && COMPONENT_MODE === PROP) {
-                COMPONENT_MODE = CHILDREN;
-                PROP_MODE = NONE;
-              }
-              if (property2 === "...") {
-                component2.properties.push(...Object.entries(dynamics[i]).map(([name, value]) => ({ name, value })));
-              } else if (property2) {
-                component2.properties.push({ name: property2, value: "" });
-              }
-            } else if (PROP_MODE === PROP_VAL) {
-              if (statics[i][j] === '"' || statics[i][j] === "'") {
-                const quote = statics[i][j];
-                if (!statics[i][j + 1]) {
-                  property.value = dynamics[i];
+                if (statics[i][j] === "=") {
+                  PROP_MODE = PROP_VAL;
+                } else if (statics[i][j] === "/" && COMPONENT_MODE === PROP) {
+                  COMPONENT_MODE = NONE;
+                  PROP_MODE = NONE;
+                  const component3 = componentStack.pop();
+                  if (!componentStack.length) {
+                    result = "";
+                    yield component3;
+                  }
+                } else if (statics[i][j] === ">" && COMPONENT_MODE === PROP) {
+                  COMPONENT_MODE = CHILDREN;
+                  PROP_MODE = NONE;
+                }
+                if (property2 === "...") {
+                  component2.properties.push(...Object.entries(dynamics[i]).map(([name, value]) => ({ name, value })));
+                } else if (property2) {
+                  component2.properties.push({ name: property2, value: "" });
+                }
+              } else if (PROP_MODE === PROP_VAL) {
+                if (statics[i][j] === '"' || statics[i][j] === "'") {
+                  const quote = statics[i][j];
+                  if (!statics[i][j + 1]) {
+                    property.value = dynamics[i];
+                    PROP_MODE = SET_PROP;
+                  } else {
+                    let val = "";
+                    j++;
+                    while (statics[i][j] !== quote) {
+                      val += statics[i][j];
+                      j++;
+                    }
+                    property.value = val || "";
+                    PROP_MODE = SET_PROP;
+                  }
+                } else if (!statics[i][j - 1]) {
+                  property.value = dynamics[i - 1];
                   PROP_MODE = SET_PROP;
+                  if (statics[i][j] === "/") {
+                    const component3 = componentStack.pop();
+                    if (!componentStack.length) {
+                      yield component3;
+                    }
+                  }
                 } else {
                   let val = "";
-                  j++;
-                  while (statics[i][j] !== quote) {
+                  while (statics[i][j] !== " " && statics[i][j] !== "/" && statics[i][j] !== ">") {
                     val += statics[i][j];
                     j++;
                   }
                   property.value = val || "";
                   PROP_MODE = SET_PROP;
-                }
-              } else if (!statics[i][j - 1]) {
-                property.value = dynamics[i - 1];
-                PROP_MODE = SET_PROP;
-                if (statics[i][j] === "/") {
-                  const component3 = componentStack.pop();
-                  if (!componentStack.length) {
-                    yield component3;
+                  if (statics[i][j] === "/") {
+                    const component3 = componentStack.pop();
+                    if (!componentStack.length) {
+                      yield component3;
+                    }
                   }
+                }
+              }
+            } else if (COMPONENT_MODE === CHILDREN) {
+              const currentComponent = componentStack[componentStack.length - 1];
+              if (statics[i][j + 1] === "/" && statics[i][j + 2] === "/") {
+                if (result) {
+                  currentComponent.children.push(result);
+                  result = "";
+                }
+                j += 3;
+                const component2 = componentStack.pop();
+                if (!componentStack.length) {
+                  MODE = TEXT;
+                  COMPONENT_MODE = NONE;
+                  yield component2;
+                }
+              } else if (statics[i][j] === "<" && typeof dynamics[i] === "function") {
+                if (result) {
+                  currentComponent.children.push(result);
+                  result = "";
+                }
+                COMPONENT_MODE = PROP;
+                PROP_MODE = SET_PROP;
+                component.fn = dynamics[i];
+                componentStack.push(component);
+              } else if (!statics[i][j + 1]) {
+                if (result && dynamics[i]) {
+                  result += statics[i][j];
+                  currentComponent.children.push(result);
+                  currentComponent.children.push(dynamics[i]);
                 }
               } else {
-                let val = "";
-                while (statics[i][j] !== " " && statics[i][j] !== "/" && statics[i][j] !== ">") {
-                  val += statics[i][j];
-                  j++;
-                }
-                property.value = val || "";
-                PROP_MODE = SET_PROP;
-                if (statics[i][j] === "/") {
-                  const component3 = componentStack.pop();
-                  if (!componentStack.length) {
-                    yield component3;
-                  }
-                }
+                result += statics[i][j];
               }
-            }
-          } else if (COMPONENT_MODE === CHILDREN) {
-            const currentComponent = componentStack[componentStack.length - 1];
-            if (statics[i][j + 1] === "/" && statics[i][j + 2] === "/") {
-              if (result) {
-                currentComponent.children.push(result);
-                result = "";
-              }
-              j += 3;
-              const component2 = componentStack.pop();
-              if (!componentStack.length) {
-                MODE = TEXT;
-                COMPONENT_MODE = NONE;
-                yield component2;
-              }
-            } else if (statics[i][j] === "<" && typeof dynamics[i] === "function") {
-              if (result) {
-                currentComponent.children.push(result);
-                result = "";
-              }
+            } else if (c === ">") {
+              COMPONENT_MODE = CHILDREN;
+            } else if (c === " ") {
               COMPONENT_MODE = PROP;
               PROP_MODE = SET_PROP;
-              component.fn = dynamics[i];
-              componentStack.push(component);
-            } else if (!statics[i][j + 1]) {
-              if (result && dynamics[i]) {
-                result += statics[i][j];
-                currentComponent.children.push(result);
-                currentComponent.children.push(dynamics[i]);
+            } else if (c === "/" && statics[i][j + 1] === ">") {
+              MODE = TEXT;
+              COMPONENT_MODE = NONE;
+              const component2 = componentStack.pop();
+              if (!componentStack.length) {
+                result = "";
+                yield component2;
               }
+              j++;
             } else {
-              result += statics[i][j];
+              result += c;
             }
-          } else if (c === ">") {
-            COMPONENT_MODE = CHILDREN;
-          } else if (c === " ") {
-            COMPONENT_MODE = PROP;
-            PROP_MODE = SET_PROP;
-          } else if (c === "/" && statics[i][j + 1] === ">") {
-            MODE = TEXT;
-            COMPONENT_MODE = NONE;
-            const component2 = componentStack.pop();
-            if (!componentStack.length) {
-              result = "";
-              yield component2;
-            }
-            j++;
           } else {
             result += c;
           }
-        } else {
-          result += c;
         }
-      }
-      if (result && COMPONENT_MODE !== CHILDREN) {
-        yield result;
-      }
-      if (componentStack.length > 1 && component.fn) {
-        componentStack[componentStack.length - 2].children.push(component);
-      }
-      if (dynamics[i] && MODE !== COMPONENT) {
-        yield dynamics[i];
+        if (result && COMPONENT_MODE !== CHILDREN) {
+          yield result;
+        }
+        if (componentStack.length > 1 && component.fn) {
+          componentStack[componentStack.length - 2].children.push(component);
+        }
+        if (dynamics[i] && MODE !== COMPONENT) {
+          yield dynamics[i];
+        }
       }
     }
   }

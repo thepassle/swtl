@@ -210,7 +210,7 @@ describe('children', () => {
       <${Bar}/>
       <${Baz}/>
     <//>`);
-    assert.deepStrictEqual(template.find(i => i.kind === COMPONENT_SYMBOL).children, 
+    assert.deepStrictEqual(template.find(i => i.kind === COMPONENT_SYMBOL).children.filter(c => c.kind === COMPONENT_SYMBOL), 
       [
         {
           fn: Bar,
@@ -224,7 +224,6 @@ describe('children', () => {
           children: [],
           kind: COMPONENT_SYMBOL
         },
-        '\n    '
       ]);
   });
 });

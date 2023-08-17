@@ -10,11 +10,9 @@ import { render, renderToString } from './render.js';
 
 // console.log(await Promise.all(promises));
 
-// function Foo({children}) {
-//   return html`
-//     <h1>foo</h1>
-//   `
-// }
+function Foo({children}) {
+  return html`${children}`
+}
 
 function Bar({children}) {
   return html`456`;
@@ -23,6 +21,11 @@ function Bar({children}) {
 function Baz({children}) {
   return html`<h2>${children}</h2>`;
 }
+
+console.log(await renderToString(html`<${Foo}>
+  <${Bar}/>
+  <${Baz}/>
+<//>`));
 
 // async function* generator() {
 //   await new Promise(resolve => setTimeout(resolve, 1000));
