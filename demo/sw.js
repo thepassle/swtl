@@ -31,7 +31,11 @@ const router = new Router({
   routes: [
     {
       path: '/',
-      render: ({params, query, request}) => html`<${HtmlPage}><h1>1</h1><${Bar}/><//>`
+      render: ({params, query, request}) => html`
+        <${HtmlPage}>
+          <h1>hi</h1>
+          <${Baz}>foo <//>
+        <//>`
     },
     {
       path: '/foo',

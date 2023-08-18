@@ -292,9 +292,6 @@
   }
 
   // demo/sw.js
-  function Bar() {
-    return html`<h2>bar</h2>`;
-  }
   function Baz({ children }) {
     return html`<h3>baz ${children}</h3>`;
   }
@@ -302,7 +299,11 @@
     routes: [
       {
         path: "/",
-        render: ({ params, query, request }) => html`<${HtmlPage}><h1>1</h1><${Bar}/><//>`
+        render: ({ params, query, request }) => html`
+        <${HtmlPage}>
+          <h1>hi</h1>
+          <${Baz}>foo <//>
+        <//>`
       },
       {
         path: "/foo",
