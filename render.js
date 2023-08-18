@@ -57,6 +57,7 @@ export async function* handle(chunk) {
 
 export async function* render(template) {
   for (const chunk of template) {
+    // debugger;
     yield* handle(chunk);
   }
 }

@@ -233,7 +233,7 @@
                   COMPONENT_MODE = NONE;
                   yield component2;
                 }
-              } else if (statics[i][j] === "<" && typeof dynamics[i] === "function") {
+              } else if (statics[i][j] === "<" && !statics[i][j + 1] && typeof dynamics[i] === "function") {
                 if (result) {
                   currentComponent.children.push(result);
                   result = "";
@@ -292,12 +292,8 @@
   }
 
   // demo/sw.js
-  async function* generator() {
-    let i = 0;
-    while (i < 2e3) {
-      i++;
-      yield* html`<li>${i}</li>`;
-    }
+  function Bar() {
+    return html`<h2>bar</h2>`;
   }
   function Baz({ children }) {
     return html`<h3>baz ${children}</h3>`;
@@ -306,14 +302,7 @@
     routes: [
       {
         path: "/",
-        render: ({ params, query, request }) => html`
-        <${HtmlPage} title="Home">
-          <h1>Home</h1>
-          <ul>
-            ${generator()}
-          </ul>
-        <//>
-      `
+        render: ({ params, query, request }) => html`<${HtmlPage}><h1>1</h1><${Bar}/><//>`
       },
       {
         path: "/foo",

@@ -31,14 +31,7 @@ const router = new Router({
   routes: [
     {
       path: '/',
-      render: ({params, query, request}) => html`
-        <${HtmlPage} title="Home">
-          <h1>Home</h1>
-          <ul>
-            ${generator()}
-          </ul>
-        <//>
-      `
+      render: ({params, query, request}) => html`<${HtmlPage}><h1>1</h1><${Bar}/><//>`
     },
     {
       path: '/foo',

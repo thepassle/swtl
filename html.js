@@ -236,7 +236,7 @@ export function* html(statics, ...dynamics) {
                 COMPONENT_MODE = NONE;
                 yield component;
               }
-            } else if (statics[i][j] === '<' && typeof dynamics[i] === 'function') {
+            } else if (statics[i][j] === '<' && !statics[i][j + 1] && typeof dynamics[i] === 'function') {
               /**
                * If the next child is a component, we need to push to children what we have
                */

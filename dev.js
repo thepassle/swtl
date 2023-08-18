@@ -11,7 +11,7 @@ import { render, renderToString } from './render.js';
 // console.log(await Promise.all(promises));
 
 function Foo({children}) {
-  return html`${children}`
+  return html`<h1>${children}</h1>`
 }
 
 function Bar({children}) {
@@ -24,7 +24,6 @@ function Baz({children}) {
 
 console.log(await renderToString(html`<${Foo}>
   <${Bar}/>
-  <${Baz}/>
 <//>`));
 
 // async function* generator() {
