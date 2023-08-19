@@ -54,7 +54,6 @@ export function* html(statics, ...dynamics) {
        */
       for (let j = 0; j < statics[i].length; j++) {
         let c = statics[i][j];
-        // debugger;
   
         if (MODE === TEXT) {
           if (
@@ -161,17 +160,21 @@ export function* html(statics, ...dynamics) {
                 }
                 /**
                  * @example <${Foo} bar=${1}>
-                 *                      ^^^^
+                 *                          ^
                  */
               } else if (!statics[i][j - 1]) {
                 property.value = dynamics[i - 1];
                 PROP_MODE = SET_PROP;
-                /**
-                 * @example <${Foo} bar=${1}/>
-                 *                          ^
-                 * Yield if we finished the component
-                 */
-                if (statics[i][j] === '/') {
+
+                if(statics[i][j] === '>') {
+                  PROP_MODE = NONE;
+                  COMPONENT_MODE = CHILDREN;
+                  /**
+                   * @example <${Foo} bar=${1}/>
+                   *                          ^
+                   * Yield if we finished the component
+                   */
+                } else if (statics[i][j] === '/') {
                   const component = componentStack.pop();
                   if (!componentStack.length) {
                     yield component;

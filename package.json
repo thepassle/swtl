@@ -1,6 +1,6 @@
 {
   "name": "swtl",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -10,7 +10,9 @@
     "test": "node --watch tests/tests.js"
   },
   "exports": {
+    ".": "./index.js",
     "./html.js": "./html.js",
+    "./async.js": "./async.js",
     "./render.js": "./render.js",
     "./router.js": "./router.js"
   },
@@ -18,7 +20,9 @@
     "html.js",
     "render.js",
     "router.js",
-    "symbol.js"
+    "symbol.js",
+    "async.js",
+    "index.js"
   ],
   "keywords": [],
   "author": "",

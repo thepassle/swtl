@@ -1,5 +1,6 @@
 import { html } from './html.js';
 import { render, renderToString } from './render.js';
+import { Async, when } from './async.js';
 
 // function Async({children, task}) {
 //   return { task: task(), children };
@@ -10,21 +11,39 @@ import { render, renderToString } from './render.js';
 
 // console.log(await Promise.all(promises));
 
+
+/**
+ * the handling of while(promises.length) should only happen after everything else has rendered
+ * but currently it already starts handling promises when the template has not finished yet
+ * 
+ * THE REASON IS THAT THE PROMISES
+ */
 function Foo({children}) {
-  return html`<h1>${children}</h1>`
+  return html`<main>${children} BEFORE WHILE PROMISES</main>`
 }
 
-function Bar({children}) {
-  return html`456`;
-}
-
-function Baz({children}) {
-  return html`<h2>${children}</h2>`;
+async function* generator() {
+  await new Promise(r => setTimeout(r, 10));
+  yield* html`<li>1</li>`;
+  await new Promise(r => setTimeout(r, 10));
+  yield* html`<li>2</li>`;
 }
 
 console.log(await renderToString(html`<${Foo}>
-  <${Bar}/>
+  <h1>home</h1>
+  ${generator()}
+  <h2>footer</h2>
 <//>`));
+
+
+// const template = html`hii`
+// console.log(await renderToString(html`a ${when(1, () => template)}`));
+
+// function htm(statics, ...dynamics) {
+//   console.log(statics, dynamics);
+// }
+
+// console.log(htm`'"${1}"'`);
 
 // async function* generator() {
 //   await new Promise(resolve => setTimeout(resolve, 1000));

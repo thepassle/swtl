@@ -1,4 +1,5 @@
-import { COMPONENT_SYMBOL } from "./symbol.js";
+import { html } from './html.js';
+import { ASYNC_SYMBOL, COMPONENT_SYMBOL } from "./symbol.js";
 
 function hasGetReader(obj) {
   return typeof obj.getReader === "function";
@@ -31,34 +32,82 @@ async function* handleIterator(iterable) {
   }
 }
 
-export async function* handle(chunk) {
+export async function* handle(chunk, promises) {
   if (typeof chunk === "string") {
     yield chunk;
   } else if (Array.isArray(chunk)) {
-    yield* render(chunk);
+    yield* _render(chunk, promises);
   } else if (typeof chunk.then === "function") {
     const v = await chunk;
-    yield* handle(v);
+    yield* handle(v, promises);
   } else if (chunk instanceof Response && chunk.body) {
     yield* handleIterator(chunk.body);
   } else if (chunk[Symbol.asyncIterator] || chunk[Symbol.iterator]) {
-    yield* chunk;
+    yield* _render(chunk, promises);
+  } else if (chunk?.fn?.kind === ASYNC_SYMBOL) {
+    const { task, template } = chunk.fn({
+      ...chunk.properties.reduce((acc, prop) => ({...acc, [prop.name]: prop.value}), {}),
+      children: chunk.children,
+    });
+    const id = promises.length;
+    promises.push(
+      task()
+        .then(data => ({
+          id,
+          template: template({state: 'success', data}) 
+        }))
+        .catch(error => ({
+          id,
+          template: template({state: 'error', error}) 
+        }))
+    );
+    yield* _render(html`<pending-task style="display: contents;" data-id="${id.toString()}">${template({state: 'pending'})}</pending-task>`, promises);
   } else if (chunk.kind === COMPONENT_SYMBOL) {
-    yield* render(
+    yield* _render(
       await chunk.fn({
         ...chunk.properties.reduce((acc, prop) => ({...acc, [prop.name]: prop.value}), {}),
         children: chunk.children,
-      })
+      }),
+      promises
     );
   } else {
     yield chunk.toString();
   }
 }
 
+async function* _render(template, promises) {
+  for await (const chunk of template) {
+    yield* handle(chunk, promises);
+  }
+}
+
 export async function* render(template) {
-  for (const chunk of template) {
-    // debugger;
-    yield* handle(chunk);
+  let promises = [];
+
+  yield* _render(template, promises);
+
+  promises = promises.map(promise => {
+    let p = promise.then(val => {
+      promises.splice(promises.indexOf(p), 1);
+      return val;
+    });
+    return p;
+  });
+
+  while (promises.length > 0) {
+    const nextPromise =  await Promise.race(promises);
+    const { id, template } = nextPromise;
+
+    yield* render(html`
+      <template data-id="${id.toString()}">${template}</template>
+      <script>
+        {
+          let toReplace = document.querySelector('pending-task[data-id="${id.toString()}"]');
+          const template = document.querySelector('template[data-id="${id.toString()}"]').content.cloneNode(true);
+          toReplace.replaceWith(template);
+        }
+      </script>
+    `)
   }
 }
 

@@ -9,8 +9,7 @@ npm i swtl
 ## Example
 
 ```js
-import { Router } from 'swtl/router.js';
-import { html } from 'swtl/html.js';
+import { html, Router } from 'swtl';
 import { BreadCrumbs } from './BreadCrumbs.js'
 
 function HtmlPage({children, title}) {
@@ -55,8 +54,7 @@ self.addEventListener('fetch', (event) => {
 Uses [URLPattern](https://developer.mozilla.org/en-US/docs/Web/API/URLPattern) internally for matching the `paths`. The `render` callback gets passed the native [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) object, as well as any route params or query params.
 
 ```js
-import { Router } from 'swtl/router.js';
-import { html } from 'swtl/html.js';
+import { html, Router } from 'swtl';
 
 const router = new Router({
   routes: [
@@ -164,13 +162,36 @@ const template = html`
 `;
 ```
 
+## Out of order streaming
+
+For out of order streaming you can use the built-in `Async` component and provide a `task` property:
+
+```js
+import { Async, when } from 'swtl';
+
+html`
+  <${Async} task=${() => fetch('/api/foo').then(r => r.json())}>
+    ${({state, data, error}) => html`
+      <h1>Fetching data</h1>
+      ${when(state === 'pending', () => html`<p>Loading...</p>`)}
+      ${when(state === 'error', () => html`<p>Failed to fetch data</p>`)}
+      ${when(state === 'success', () => html`
+        <ul>
+          ${data.map(i => html`<li>${i}</li>`)}
+        </ul>
+      `)}
+    `}
+  <//>
+`
+```
+
 
 ## Render
 
 The `Router` streams responses to the browser via the `render` function internally in `handleRequest`:
 
 ```js
-import { render } from 'swtl/render.js';
+import { render } from 'swtl';
 
 for (const chunk of render(html`<h1>${1}</h1>`)) {
   console.log(chunk);
@@ -180,7 +201,7 @@ for (const chunk of render(html`<h1>${1}</h1>`)) {
 But we also export a `renderToString`:
 
 ```js
-import { renderToString } from 'swtl/render.js';
+import { renderToString } from 'swtl';
 
 const result = await renderToString(html`<h1>${1}</h1>`);
 ```

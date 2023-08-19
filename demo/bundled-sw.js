@@ -5,109 +5,7 @@
 
   // symbol.js
   var COMPONENT_SYMBOL = Symbol("component");
-
-  // render.js
-  function hasGetReader(obj) {
-    return typeof obj.getReader === "function";
-  }
-  async function* streamAsyncIterator(stream) {
-    const reader = stream.getReader();
-    const decoder = new TextDecoder("utf-8");
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done)
-          return;
-        yield decoder.decode(value);
-      }
-    } finally {
-      reader.releaseLock();
-    }
-  }
-  async function* handleIterator(iterable) {
-    if (hasGetReader(iterable)) {
-      for await (const chunk of streamAsyncIterator(iterable)) {
-        yield chunk;
-      }
-    } else {
-      for await (const chunk of iterable) {
-        yield chunk;
-      }
-    }
-  }
-  async function* handle(chunk) {
-    if (typeof chunk === "string") {
-      yield chunk;
-    } else if (Array.isArray(chunk)) {
-      yield* render(chunk);
-    } else if (typeof chunk.then === "function") {
-      const v = await chunk;
-      yield* handle(v);
-    } else if (chunk instanceof Response && chunk.body) {
-      yield* handleIterator(chunk.body);
-    } else if (chunk[Symbol.asyncIterator] || chunk[Symbol.iterator]) {
-      yield* chunk;
-    } else if (chunk.kind === COMPONENT_SYMBOL) {
-      yield* render(
-        await chunk.fn({
-          ...chunk.properties.reduce((acc, prop) => ({ ...acc, [prop.name]: prop.value }), {}),
-          children: chunk.children
-        })
-      );
-    } else {
-      yield chunk.toString();
-    }
-  }
-  async function* render(template) {
-    for (const chunk of template) {
-      yield* handle(chunk);
-    }
-  }
-
-  // router.js
-  var Router = class {
-    constructor({ routes }) {
-      this.routes = routes.map((route) => ({
-        ...route,
-        urlPattern: new URLPattern({
-          pathname: route.path,
-          baseURL: self.location.origin,
-          search: "*",
-          hash: "*"
-        })
-      }));
-    }
-    async handleRequest(request) {
-      const url = new URL(request.url);
-      for (const route of this.routes) {
-        const match = route.urlPattern.exec(url);
-        if (match) {
-          const query = Object.fromEntries(new URLSearchParams(request.url.search));
-          const params = match?.pathname?.groups ?? {};
-          const iterator = render(route.render({ query, params, request }));
-          const encoder = new TextEncoder();
-          const stream = new ReadableStream({
-            async pull(controller) {
-              const { value, done } = await iterator.next();
-              if (done) {
-                controller.close();
-              } else {
-                controller.enqueue(encoder.encode(value));
-              }
-            }
-          });
-          return new Response(stream, {
-            status: 200,
-            headers: {
-              "Content-Type": "text/html",
-              "Transfer-Encoding": "chunked"
-            }
-          });
-        }
-      }
-      return new Response("Not Found", { status: 404 });
-    }
-  };
+  var ASYNC_SYMBOL = Symbol("async");
 
   // html.js
   var TEXT = "TEXT";
@@ -197,7 +95,10 @@
                 } else if (!statics[i][j - 1]) {
                   property.value = dynamics[i - 1];
                   PROP_MODE = SET_PROP;
-                  if (statics[i][j] === "/") {
+                  if (statics[i][j] === ">") {
+                    PROP_MODE = NONE;
+                    COMPONENT_MODE = CHILDREN;
+                  } else if (statics[i][j] === "/") {
                     const component3 = componentStack.pop();
                     if (!componentStack.length) {
                       yield component3;
@@ -285,11 +186,166 @@
     }
   }
 
-  // demo/pages/HtmlPage.js
-  var _a;
-  function HtmlPage({ children, title }) {
-    return html(_a || (_a = __template(['\n    <html lang="en">\n      <head>\n        <meta charset="utf-8" />\n        <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n        <meta name="Description" content="">\n        <title>', "</title>\n      </head>\n      <body>\n        ", "\n        <script>\n          let refreshing;\n          async function handleUpdate() {\n            // check to see if there is a current active service worker\n            const oldSw = (await navigator.serviceWorker.getRegistration())?.active?.state;\n\n            navigator.serviceWorker.addEventListener('controllerchange', async () => {\n              if (refreshing) return;\n\n              // when the controllerchange event has fired, we get the new service worker\n              const newSw = (await navigator.serviceWorker.getRegistration())?.active?.state;\n\n              // if there was already an old activated service worker, and a new activating service worker, do the reload\n              if (oldSw === 'activated' && newSw === 'activating') {\n                refreshing = true;\n                window.location.reload();\n              }\n            });\n          }\n\n          handleUpdate();\n        <\/script>\n      </body>\n    </html>\n  "])), title ?? "", children);
+  // render.js
+  function hasGetReader(obj) {
+    return typeof obj.getReader === "function";
   }
+  async function* streamAsyncIterator(stream) {
+    const reader = stream.getReader();
+    const decoder = new TextDecoder("utf-8");
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done)
+          return;
+        yield decoder.decode(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+  async function* handleIterator(iterable) {
+    if (hasGetReader(iterable)) {
+      for await (const chunk of streamAsyncIterator(iterable)) {
+        yield chunk;
+      }
+    } else {
+      for await (const chunk of iterable) {
+        yield chunk;
+      }
+    }
+  }
+  async function* handle(chunk, promises) {
+    if (typeof chunk === "string") {
+      yield chunk;
+    } else if (Array.isArray(chunk)) {
+      yield* _render(chunk, promises);
+    } else if (typeof chunk.then === "function") {
+      const v = await chunk;
+      yield* handle(v, promises);
+    } else if (chunk instanceof Response && chunk.body) {
+      yield* handleIterator(chunk.body);
+    } else if (chunk[Symbol.asyncIterator] || chunk[Symbol.iterator]) {
+      yield* _render(chunk, promises);
+    } else if (chunk?.fn?.kind === ASYNC_SYMBOL) {
+      const { task, template } = chunk.fn({
+        ...chunk.properties.reduce((acc, prop) => ({ ...acc, [prop.name]: prop.value }), {}),
+        children: chunk.children
+      });
+      const id = promises.length;
+      promises.push(
+        task().then((data) => ({
+          id,
+          template: template({ state: "success", data })
+        })).catch((error) => ({
+          id,
+          template: template({ state: "error", error })
+        }))
+      );
+      yield* _render(html`<pending-task style="display: contents;" data-id="${id.toString()}">${template({ state: "pending" })}</pending-task>`, promises);
+    } else if (chunk.kind === COMPONENT_SYMBOL) {
+      yield* _render(
+        await chunk.fn({
+          ...chunk.properties.reduce((acc, prop) => ({ ...acc, [prop.name]: prop.value }), {}),
+          children: chunk.children
+        }),
+        promises
+      );
+    } else {
+      yield chunk.toString();
+    }
+  }
+  async function* _render(template, promises) {
+    for await (const chunk of template) {
+      yield* handle(chunk, promises);
+    }
+  }
+  var _a;
+  async function* render(template) {
+    let promises = [];
+    yield* _render(template, promises);
+    promises = promises.map((promise) => {
+      let p = promise.then((val) => {
+        promises.splice(promises.indexOf(p), 1);
+        return val;
+      });
+      return p;
+    });
+    while (promises.length > 0) {
+      const nextPromise = await Promise.race(promises);
+      const { id, template: template2 } = nextPromise;
+      yield* render(html(_a || (_a = __template(['\n      <template data-id="', '">', `</template>
+      <script>
+        {
+          let toReplace = document.querySelector('pending-task[data-id="`, `"]');
+          const template = document.querySelector('template[data-id="`, `"]').content.cloneNode(true);
+          toReplace.replaceWith(template);
+        }
+      <\/script>
+    `])), id.toString(), template2, id.toString(), id.toString()));
+    }
+  }
+
+  // router.js
+  var Router = class {
+    constructor({ routes }) {
+      this.routes = routes.map((route) => ({
+        ...route,
+        urlPattern: new URLPattern({
+          pathname: route.path,
+          baseURL: self.location.origin,
+          search: "*",
+          hash: "*"
+        })
+      }));
+    }
+    async handleRequest(request) {
+      const url = new URL(request.url);
+      for (const route of this.routes) {
+        const match = route.urlPattern.exec(url);
+        if (match) {
+          const query = Object.fromEntries(new URLSearchParams(request.url.search));
+          const params = match?.pathname?.groups ?? {};
+          const iterator = render(route.render({ query, params, request }));
+          const encoder = new TextEncoder();
+          const stream = new ReadableStream({
+            async pull(controller) {
+              const { value, done } = await iterator.next();
+              if (done) {
+                controller.close();
+              } else {
+                controller.enqueue(encoder.encode(value));
+              }
+            }
+          });
+          return new Response(stream, {
+            status: 200,
+            headers: {
+              "Content-Type": "text/html",
+              "Transfer-Encoding": "chunked"
+            }
+          });
+        }
+      }
+      return new Response("Not Found", { status: 404 });
+    }
+  };
+
+  // demo/pages/HtmlPage.js
+  var _a2;
+  function HtmlPage({ children, title }) {
+    return html(_a2 || (_a2 = __template(['\n    <html lang="en">\n      <head>\n        <meta charset="utf-8" />\n        <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n        <meta name="Description" content="">\n        <title>', "</title>\n      </head>\n      <body>\n        ", "\n        <script>\n          let refreshing;\n          async function handleUpdate() {\n            // check to see if there is a current active service worker\n            const oldSw = (await navigator.serviceWorker.getRegistration())?.active?.state;\n\n            navigator.serviceWorker.addEventListener('controllerchange', async () => {\n              if (refreshing) return;\n\n              // when the controllerchange event has fired, we get the new service worker\n              const newSw = (await navigator.serviceWorker.getRegistration())?.active?.state;\n\n              // if there was already an old activated service worker, and a new activating service worker, do the reload\n              if (oldSw === 'activated' && newSw === 'activating') {\n                refreshing = true;\n                window.location.reload();\n              }\n            });\n          }\n\n          handleUpdate();\n        <\/script>\n      </body>\n    </html>\n  "])), title ?? "", children);
+  }
+
+  // async.js
+  function Async({ task, children }) {
+    return {
+      task,
+      template: children.find((c) => typeof c === "function")
+    };
+  }
+  Async.kind = ASYNC_SYMBOL;
+  var when = (condition, template) => condition ? template() : "";
 
   // demo/sw.js
   function Baz({ children }) {
@@ -301,9 +357,28 @@
         path: "/",
         render: ({ params, query, request }) => html`
         <${HtmlPage}>
-          <h1>hi</h1>
-          <${Baz}>foo <//>
-        <//>`
+          <h1>home</h1>
+          <ul>
+            <li>
+              <${Async} task=${() => new Promise((r) => setTimeout(() => r({ foo: "foo" }), 3e3))}>
+                ${({ state, data }) => html`
+                ${when(state === "pending", () => html`[PENDING] slow`)}
+                  ${when(state === "success", () => html`[RESOLVED] slow`)}
+                `}
+              <//>
+            </li>
+            <li>
+              <${Async} task=${() => new Promise((r) => setTimeout(() => r({ bar: "bar" }), 1500))}>
+                ${({ state, data }) => html`
+                  ${when(state === "pending", () => html`[PENDING] fast`)}
+                  ${when(state === "success", () => html`[RESOLVED] fast`)}
+                `}
+              <//>
+            </li>
+          </ul>
+          <h2>footer</h2>
+        <//>
+      `
       },
       {
         path: "/foo",
