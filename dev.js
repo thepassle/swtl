@@ -7,17 +7,6 @@ import { Async, when } from './async.js';
 // }
 
 
-
-
-// console.log(await Promise.all(promises));
-
-
-/**
- * the handling of while(promises.length) should only happen after everything else has rendered
- * but currently it already starts handling promises when the template has not finished yet
- * 
- * THE REASON IS THAT THE PROMISES
- */
 function Foo({children}) {
   return html`<main>${children} BEFORE WHILE PROMISES</main>`
 }
