@@ -8,7 +8,7 @@ import { Async, when } from './async.js';
 
 
 function Foo({children}) {
-  return html`<main>${children} BEFORE WHILE PROMISES</main>`
+  return html`<main>${children}</main>`
 }
 
 async function* generator() {
@@ -18,11 +18,7 @@ async function* generator() {
   yield* html`<li>2</li>`;
 }
 
-console.log(await renderToString(html`<${Foo}>
-  <h1>home</h1>
-  ${generator()}
-  <h2>footer</h2>
-<//>`));
+console.log(await renderToString(html`<${Foo}/>${0}`));
 
 
 // const template = html`hii`

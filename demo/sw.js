@@ -39,7 +39,7 @@ const router = new Router({
             <li>
               <${Async} task=${() => new Promise(r => setTimeout(() => r({foo:'foo'}), 3000))}>
                 ${({state, data}) => html`
-                ${when(state === 'pending', () => html`[PENDING] slow`)}
+                  ${when(state === 'pending', () => html`[PENDING] slow`)}
                   ${when(state === 'success', () => html`[RESOLVED] slow`)}
                 `}
               <//>

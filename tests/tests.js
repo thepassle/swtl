@@ -37,6 +37,16 @@ describe('parsing', () => {
     assert.deepStrictEqual(result[1], 1);
   });
 
+  it('handles falsey expressions', () => {
+    const result = unwrap(html`<h1>hello</h1>${0}`);
+    assert.deepStrictEqual(result[1], 0);
+  });
+
+  it('handles falsey expressions', () => {
+    const result = unwrap(html`<h1>hello</h1>${false}`);
+    assert.deepStrictEqual(result[1], false);
+  });
+
   it('handles arrays', () => {
     const result = unwrap(html`<h1>${[1,2]}</h1>`);
     assert.deepStrictEqual(result[0], `<h1>`);
@@ -90,7 +100,12 @@ describe('properties', () => {
 
   it('boolean', () => {
     const result = unwrap(html`<${Foo} bar/>`);
-    assert.deepStrictEqual(result[0].properties, [{ name: 'bar', value: ''}]);
+    assert.deepStrictEqual(result[0].properties, [{ name: 'bar', value: true}]);
+  });
+
+  it('boolean', () => {
+    const result = unwrap(html`<${Foo} bar><//>`);
+    assert.deepStrictEqual(result[0].properties, [{ name: 'bar', value: true}]);
   });
 
   it('spread', () => {
@@ -160,6 +175,16 @@ describe('children', () => {
   it('handles string children with expressions', () => {
     const template = unwrap(html`<${Foo}><h1>hi ${2}</h1><//>`);
     assert.deepStrictEqual(template[0].children, ['<h1>hi ', 2, '</h1>']);
+  });
+
+  it('handles falsey expressions in children', () => {
+    const template = unwrap(html`<${Foo}><h1>hi ${0}</h1><//>`);
+    assert.deepStrictEqual(template[0].children, ['<h1>hi ', 0, '</h1>']);
+  });
+
+  it('handles falsey expressions as last dynamic value', () => {
+    const template = unwrap(html`<${Foo}/>${false}`);
+    assert.deepStrictEqual(template[1], false);
   });
 
   it('handles Component children', () => {
@@ -261,6 +286,11 @@ describe('renderToString', () => {
   it('components children', async () => {
     const result = await renderToString(html`<${Bar}>bar<//>`);
     assert.equal(result, '<h1>bar</h1>');
+  });
+
+  it('falsey values', async () => {
+    const result = await renderToString(html`<h1>${0}${false}</h1>`);
+    assert.equal(result, '<h1>0false</h1>');
   });
   
   it('components nested children', async () => {

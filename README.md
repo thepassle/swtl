@@ -110,11 +110,12 @@ html`<${Heading}/>`
 /**
  * Properties and spread
  */
-function MyComponent({foo, title, baz, qux}) {
+function MyComponent({foo, title, baz, qux, bool}) {
   return html`
     <h1>${title}</h1>
     <div>${foo}</div>
     <div>${baz} ${qux}</div>
+    <div>${bool}</div>
   `;
 }
 
@@ -123,7 +124,7 @@ const object = {
   qux: 'world',
 }
 
-html`<${MyComponent} title="hello" foo=${1} ...bar=${object}/>`;
+html`<${MyComponent} title="hello" foo=${1} ...bar=${object} baz bool/>`;
 
 /** 
  * Note that quotes are optional when using expressions, the following is also fine:

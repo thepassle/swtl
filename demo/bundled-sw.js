@@ -57,6 +57,7 @@
                   property2 += statics[i][j];
                   j++;
                 }
+                debugger;
                 if (statics[i][j] === "=") {
                   PROP_MODE = PROP_VAL;
                 } else if (statics[i][j] === "/" && COMPONENT_MODE === PROP) {
@@ -362,7 +363,7 @@
             <li>
               <${Async} task=${() => new Promise((r) => setTimeout(() => r({ foo: "foo" }), 3e3))}>
                 ${({ state, data }) => html`
-                ${when(state === "pending", () => html`[PENDING] slow`)}
+                  ${when(state === "pending", () => html`[PENDING] slow`)}
                   ${when(state === "success", () => html`[RESOLVED] slow`)}
                 `}
               <//>

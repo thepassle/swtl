@@ -20,7 +20,7 @@ export function* html(statics, ...dynamics) {
    * If no Components, just stitch statics and dynamics together
    */
   } else if (!dynamics.some(d => typeof d === 'function')) {
-    yield* statics.reduce((acc, s, i) => [...acc, s, ...(dynamics[i] ? [dynamics[i]] : [])], []);
+    yield* statics.reduce((acc, s, i) => [...acc, s, ...(dynamics.length > i ? [dynamics[i]] : [])], []);
   } else {
     let MODE = TEXT;
     let COMPONENT_MODE = NONE;
@@ -54,7 +54,6 @@ export function* html(statics, ...dynamics) {
        */
       for (let j = 0; j < statics[i].length; j++) {
         let c = statics[i][j];
-  
         if (MODE === TEXT) {
           if (
             c === "<" &&
@@ -119,7 +118,7 @@ export function* html(statics, ...dynamics) {
               if (property === '...') {
                 component.properties.push(...Object.entries(dynamics[i]).map(([name,value])=> ({name, value})));
               } else if (property) {
-                component.properties.push({name: property, value: ''});
+                component.properties.push({name: property, value: true});
               }
             } else if (PROP_MODE === PROP_VAL) {
               /**
@@ -256,7 +255,7 @@ export function* html(statics, ...dynamics) {
                * @example <${Foo}><h1>hi ${2}</h1><//>
                *                         ^^^^
                */
-              if(result && dynamics[i]) {
+              if(result && dynamics.length > i) {
                 result += statics[i][j];
                 currentComponent.children.push(result);
                 currentComponent.children.push(dynamics[i]);
@@ -301,7 +300,7 @@ export function* html(statics, ...dynamics) {
       }
   
       // We're at the end of statics, now process dynamics if there are any
-      if (dynamics[i] && MODE !== COMPONENT) {
+      if (dynamics.length > i && MODE !== COMPONENT) {
         yield dynamics[i];
       }
     }
