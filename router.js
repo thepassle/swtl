@@ -1,12 +1,12 @@
 import { render } from './render.js';
 
 export class Router {
-  constructor({ routes }) {
+  constructor({ routes, baseHref = '' }) {
     this.routes = routes.map(route => ({
       ...route,
       urlPattern: new URLPattern({
         pathname: route.path,
-        baseURL: self.location.origin,
+        baseURL: `${self.location.origin}${baseHref}`,
         search: '*',
         hash: '*',
       })

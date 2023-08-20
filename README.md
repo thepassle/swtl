@@ -84,6 +84,31 @@ self.addEventListener('fetch', (event) => {
 });
 ```
 
+### `baseHref`
+
+You can also specify a `baseHref`, for example if your app is served under a specific base route, like `https://my-app.com/foo/bar/`:
+
+```js
+const router = new Router({
+  baseHref: '/foo/bar/',
+  routes: [
+    {
+      path: '/',
+      render: () => html`<${Home}/>`
+    },
+    {
+      path: '/users/:id',
+      render: ({params}) => html`<${User} id=${params.id}/>`
+    }
+  ]
+});
+```
+
+Note that you also have the set the `base` tag in your HTML:
+```html
+<base href="/foo/bar/">
+```
+
 ## Html
 
 ### Basic usage
