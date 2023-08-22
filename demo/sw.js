@@ -29,6 +29,7 @@ function Baz({children}) {
 }
 
 const router = new Router({
+  fallback: () => html`not found!`,
   routes: [
     {
       path: '/',
@@ -61,41 +62,41 @@ const router = new Router({
       path: '/foo',
       render: ({params, query, request}) => html`<${HtmlPage}><h1>Foo</h1><//>`
     },
-    {
-      path: '/bar',
-      render: ({params, query, request}) => html`<${HtmlPage}>
-        <${Baz}>abc<//>
-        efg
-      <//>`
-    },
-    {
-      path: '/baz',
-      render: ({params, query, request}) => html`
-        <${HtmlPage}>
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-        <//>
-      `
-    },
+    // {
+    //   path: '/bar',
+    //   render: ({params, query, request}) => html`<${HtmlPage}>
+    //     <${Baz}>abc<//>
+    //     efg
+    //   <//>`
+    // },
+    // {
+    //   path: '/baz',
+    //   render: ({params, query, request}) => html`
+    //     <${HtmlPage}>
+    //       <${Baz}>abc<//>
+    //       <h3>hello</h3>
+    //       ${1}
+    //       <${Baz}>abc<//>
+    //       <h3>hello</h3>
+    //       ${1}
+    //       <${Baz}>abc<//>
+    //       <h3>hello</h3>
+    //       ${1}
+    //       <${Baz}>abc<//>
+    //       <h3>hello</h3>
+    //       ${1}
+    //       <${Baz}>abc<//>
+    //       <h3>hello</h3>
+    //       ${1}
+    //       <${Baz}>abc<//>
+    //       <h3>hello</h3>
+    //       ${1}
+    //       <${Baz}>abc<//>
+    //       <h3>hello</h3>
+    //       ${1}
+    //     <//>
+    //   `
+    // },
   ]
 });
 

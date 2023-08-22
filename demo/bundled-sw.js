@@ -19,7 +19,7 @@
     if (!dynamics.length) {
       yield* statics;
     } else if (!dynamics.some((d) => typeof d === "function")) {
-      yield* statics.reduce((acc, s, i) => [...acc, s, ...dynamics[i] ? [dynamics[i]] : []], []);
+      yield* statics.reduce((acc, s, i) => [...acc, s, ...dynamics.length > i ? [dynamics[i]] : []], []);
     } else {
       let MODE = TEXT;
       let COMPONENT_MODE = NONE;
@@ -57,7 +57,6 @@
                   property2 += statics[i][j];
                   j++;
                 }
-                debugger;
                 if (statics[i][j] === "=") {
                   PROP_MODE = PROP_VAL;
                 } else if (statics[i][j] === "/" && COMPONENT_MODE === PROP) {
@@ -75,7 +74,7 @@
                 if (property2 === "...") {
                   component2.properties.push(...Object.entries(dynamics[i]).map(([name, value]) => ({ name, value })));
                 } else if (property2) {
-                  component2.properties.push({ name: property2, value: "" });
+                  component2.properties.push({ name: property2, value: true });
                 }
               } else if (PROP_MODE === PROP_VAL) {
                 if (statics[i][j] === '"' || statics[i][j] === "'") {
@@ -145,7 +144,7 @@
                 component.fn = dynamics[i];
                 componentStack.push(component);
               } else if (!statics[i][j + 1]) {
-                if (result && dynamics[i]) {
+                if (result && dynamics.length > i) {
                   result += statics[i][j];
                   currentComponent.children.push(result);
                   currentComponent.children.push(dynamics[i]);
@@ -180,7 +179,7 @@
         if (componentStack.length > 1 && component.fn) {
           componentStack[componentStack.length - 2].children.push(component);
         }
-        if (dynamics[i] && MODE !== COMPONENT) {
+        if (dynamics.length > i && MODE !== COMPONENT) {
           yield dynamics[i];
         }
       }
@@ -289,12 +288,16 @@
 
   // router.js
   var Router = class {
-    constructor({ routes }) {
+    constructor({ routes, fallback, baseHref = "" }) {
+      this.fallback = {
+        render: fallback,
+        params: {}
+      };
       this.routes = routes.map((route) => ({
         ...route,
         urlPattern: new URLPattern({
           pathname: route.path,
-          baseURL: self.location.origin,
+          baseURL: `${self.location.origin}${baseHref}`,
           search: "*",
           hash: "*"
         })
@@ -302,33 +305,40 @@
     }
     async handleRequest(request) {
       const url = new URL(request.url);
-      for (const route of this.routes) {
-        const match = route.urlPattern.exec(url);
+      let matchedRoute;
+      for (const route2 of this.routes) {
+        const match = route2.urlPattern.exec(url);
         if (match) {
-          const query = Object.fromEntries(new URLSearchParams(request.url.search));
-          const params = match?.pathname?.groups ?? {};
-          const iterator = render(route.render({ query, params, request }));
-          const encoder = new TextEncoder();
-          const stream = new ReadableStream({
-            async pull(controller) {
-              const { value, done } = await iterator.next();
-              if (done) {
-                controller.close();
-              } else {
-                controller.enqueue(encoder.encode(value));
-              }
-            }
-          });
-          return new Response(stream, {
-            status: 200,
-            headers: {
-              "Content-Type": "text/html",
-              "Transfer-Encoding": "chunked"
-            }
-          });
+          matchedRoute = {
+            render: route2.render,
+            params: match?.pathname?.groups ?? {}
+          };
+          break;
         }
       }
-      return new Response("Not Found", { status: 404 });
+      const route = matchedRoute?.render ?? this?.fallback?.render;
+      if (route) {
+        const query = Object.fromEntries(new URLSearchParams(request.url.search));
+        const iterator = render(route({ query, params: matchedRoute?.params, request }));
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          async pull(controller) {
+            const { value, done } = await iterator.next();
+            if (done) {
+              controller.close();
+            } else {
+              controller.enqueue(encoder.encode(value));
+            }
+          }
+        });
+        return new Response(stream, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html",
+            "Transfer-Encoding": "chunked"
+          }
+        });
+      }
     }
   };
 
@@ -349,10 +359,8 @@
   var when = (condition, template) => condition ? template() : "";
 
   // demo/sw.js
-  function Baz({ children }) {
-    return html`<h3>baz ${children}</h3>`;
-  }
   var router = new Router({
+    fallback: () => html`not found!`,
     routes: [
       {
         path: "/",
@@ -384,42 +392,42 @@
       {
         path: "/foo",
         render: ({ params, query, request }) => html`<${HtmlPage}><h1>Foo</h1><//>`
-      },
-      {
-        path: "/bar",
-        render: ({ params, query, request }) => html`<${HtmlPage}>
-        <${Baz}>abc<//>
-        efg
-      <//>`
-      },
-      {
-        path: "/baz",
-        render: ({ params, query, request }) => html`
-        <${HtmlPage}>
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-          <${Baz}>abc<//>
-          <h3>hello</h3>
-          ${1}
-        <//>
-      `
       }
+      // {
+      //   path: '/bar',
+      //   render: ({params, query, request}) => html`<${HtmlPage}>
+      //     <${Baz}>abc<//>
+      //     efg
+      //   <//>`
+      // },
+      // {
+      //   path: '/baz',
+      //   render: ({params, query, request}) => html`
+      //     <${HtmlPage}>
+      //       <${Baz}>abc<//>
+      //       <h3>hello</h3>
+      //       ${1}
+      //       <${Baz}>abc<//>
+      //       <h3>hello</h3>
+      //       ${1}
+      //       <${Baz}>abc<//>
+      //       <h3>hello</h3>
+      //       ${1}
+      //       <${Baz}>abc<//>
+      //       <h3>hello</h3>
+      //       ${1}
+      //       <${Baz}>abc<//>
+      //       <h3>hello</h3>
+      //       ${1}
+      //       <${Baz}>abc<//>
+      //       <h3>hello</h3>
+      //       ${1}
+      //       <${Baz}>abc<//>
+      //       <h3>hello</h3>
+      //       ${1}
+      //     <//>
+      //   `
+      // },
     ]
   });
   self.addEventListener("install", () => {

@@ -109,6 +109,22 @@ Note that you also have the set the `base` tag in your HTML:
 <base href="/foo/bar/">
 ```
 
+### `fallback`
+
+You can also provide a fallback in case no routes are matched. If you don't provide a fallback, the request will not be handled by the service worker, and go through to the network.
+
+```js
+const router = new Router({
+  routes: [
+    {
+      path: '/',
+      render: () => html`<${Home}/>`
+    }
+  ],
+  fallback: ({query, request}) => html`<${NotFound}/>`
+});
+```
+
 ## Html
 
 ### Basic usage
