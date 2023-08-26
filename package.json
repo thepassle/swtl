@@ -1,6 +1,6 @@
 {
   "name": "swtl",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -14,7 +14,8 @@
     "./html.js": "./html.js",
     "./async.js": "./async.js",
     "./render.js": "./render.js",
-    "./router.js": "./router.js"
+    "./router.js": "./router.js",
+    "./strategies.js": "./strategies.js"
   },
   "files": [
     "html.js",
@@ -22,6 +23,7 @@
     "router.js",
     "symbol.js",
     "async.js",
+    "strategies.js",
     "index.js"
   ],
   "keywords": [],

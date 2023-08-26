@@ -9,7 +9,7 @@ npm i swtl
 ## Example
 
 ```js
-import { html, Router } from 'swtl';
+import { html, Router, CacheFirst } from 'swtl';
 import { BreadCrumbs } from './BreadCrumbs.js'
 
 function HtmlPage({children, title}) {
@@ -35,6 +35,7 @@ const router = new Router({
           <ul>
             ${['foo', 'bar', 'baz'].map(i => html`<li>${i}</li>`)}
           </ul>
+          <${CacheFirst} file="./some-file.html"/>
           <${Footer}/>
         <//>
       `
@@ -196,11 +197,31 @@ const template = html`
   <main> 
     ${fetch('/some.html')}
     ${caches.match('/some.html')}
+    ${new Response('hello')}
     ${stream}
     <ul>
       ${gen()}
     </ul>
   </main>
+`;
+```
+
+## Strategies
+
+We also ship some built-in components to declaratively let you request files.
+
+```js
+import { NetworkFirst, NetworkOnly, CacheFirst, CacheOnly, html } from 'swtl';
+
+const template = html`
+  <h1>Hello world</h1>
+  
+  <${NetworkFirst} file="./some-file.html"/>
+  <${NetworkOnly} file="./some-file.html"/>
+  <${CacheFirst} file="./some-file.html"/>
+  <${CacheOnly} file="./some-file.html"/>
+
+  <footer>Copyright</footer>
 `;
 ```
 
