@@ -253,12 +253,11 @@ export function* html(statics, ...dynamics) {
             } else if (!statics[i][j+1]) {
               /**
                * @example <${Foo}><h1>hi ${2}</h1><//>
-               *                         ^^^^
+               *                  ^^^^^^^       
                */
-              if(result && dynamics.length > i) {
+              if(result) {
                 result += statics[i][j];
                 currentComponent.children.push(result);
-                currentComponent.children.push(dynamics[i]);
               }
             } else {
               result += statics[i][j];
@@ -291,6 +290,11 @@ export function* html(statics, ...dynamics) {
         }
       }
   
+      if(COMPONENT_MODE === CHILDREN && dynamics.length > i) {
+        const currentComponent = componentStack[componentStack.length - 1];
+        currentComponent.children.push(dynamics[i]);
+      }
+
       if (result && COMPONENT_MODE !== CHILDREN) {
         yield result;
       }

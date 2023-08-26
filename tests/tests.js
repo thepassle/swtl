@@ -157,6 +157,11 @@ describe('properties', () => {
 });
 
 describe('children', () => {
+  it('handles expression children', () => {
+    const template = unwrap(html`<${Foo}>${1}<//>`);
+    assert.deepStrictEqual(template[0].children, [1]);
+  });
+
   it('handles string children', () => {
     const template = unwrap(html`<${Foo}><h1>hi</h1><//>`);
     assert.deepStrictEqual(template[0].children, ['<h1>hi</h1>']);
