@@ -240,7 +240,7 @@ const template = html`
   <${CacheFirst} file="./some-file.html">
     <div>Not in cache, and failed to fetch</div>
   <//>
-  
+
   <${CacheOnly} file="./some-file.html">
     <div>Not in cache</div>
   <//>
@@ -278,7 +278,7 @@ The `Router` streams responses to the browser via the `render` function internal
 ```js
 import { render } from 'swtl';
 
-for (const chunk of render(html`<h1>${1}</h1>`)) {
+for await (const chunk of render(html`<h1>${1}</h1>`)) {
   console.log(chunk);
 }
 ```
