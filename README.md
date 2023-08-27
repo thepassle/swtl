@@ -225,6 +225,28 @@ const template = html`
 `;
 ```
 
+You can also provide a fallback:
+
+```js
+const template = html`
+  <${NetworkFirst} file="./some-file.html">
+    <div>Failed to fetch, and not in cache</div>
+  <//>
+
+  <${NetworkOnly} file="./some-file.html">
+    <div>Failed to fetch</div>
+  <//>
+
+  <${CacheFirst} file="./some-file.html">
+    <div>Not in cache, and failed to fetch</div>
+  <//>
+  
+  <${CacheOnly} file="./some-file.html">
+    <div>Not in cache</div>
+  <//>
+`;
+```
+
 ## Out of order streaming
 
 For out of order streaming you can use the built-in `Async` component and provide a `task` property:
