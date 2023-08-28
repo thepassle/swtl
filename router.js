@@ -64,26 +64,32 @@ export class Router {
         }
       }
 
-      const iterator = render(route({query, params, request}));
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream({
-        async pull(controller) {
-          const { value, done } = await iterator.next();
-          if (done) {
-            controller.close();
-          } else {
-            controller.enqueue(encoder.encode(value));
-          }
-        }
-      });
-
-      return new Response(stream, { 
-        status: 200,
-        headers: { 
-          'Content-Type': 'text/html', 
-          'Transfer-Encoding': 'chunked', 
-        } 
-      });
+      return new HtmlResponse(route({query, params, request}));
     }
+  }
+}
+
+export class HtmlResponse {
+  constructor(template) {
+    const iterator = render(template);
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async pull(controller) {
+        const { value, done } = await iterator.next();
+        if (done) {
+          controller.close();
+        } else {
+          controller.enqueue(encoder.encode(value));
+        }
+      }
+    });
+
+    return new Response(stream, { 
+      status: 200,
+      headers: { 
+        'Content-Type': 'text/html', 
+        'Transfer-Encoding': 'chunked', 
+      } 
+    });
   }
 }

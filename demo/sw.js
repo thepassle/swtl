@@ -1,4 +1,4 @@
-import { Router } from '../router.js';
+import { HtmlResponse, Router } from '../router.js';
 import { html } from '../html.js';
 import { HtmlPage } from './pages/HtmlPage.js';
 import { Await, when } from '../await.js';
@@ -47,6 +47,7 @@ const router = new Router({
           name: 'a-plugin',
           async beforeResponse({request, query, params}) {
             console.log(2, 'a-plugin', request, query, params);
+            return new HtmlResponse(html`hi`);
             // return Response.redirect('/b');
           }
         }

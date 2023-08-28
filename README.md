@@ -133,6 +133,8 @@ const router = new Router({
 You can also provide plugins. You can add global plugins that will run for every route, or add plugins for specific routes only. If you return a `Response` from a plugin, the router will return that response to the browser instead of your `render` function.
 
 ```js
+import { Router, html, HtmlResponse } from 'swtl';
+
 const logger = {
   name: 'logger-plugin',
   beforeResponse({request}) {
@@ -163,6 +165,13 @@ const router = new Router({
              */
             if (query.foo === 'bar') {
               return new Response('bar');
+            }
+
+            if (query.bar === 'foo') {
+              /**
+               * Returns a `Response` with a stream of the html template as body for convenience
+               */
+              return new HtmlResponse(html`<${Bar}/>`);
             }
 
             /**
