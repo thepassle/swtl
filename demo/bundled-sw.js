@@ -5,7 +5,7 @@
 
   // symbol.js
   var COMPONENT_SYMBOL = Symbol("component");
-  var ASYNC_SYMBOL = Symbol("async");
+  var AWAIT_SYMBOL = Symbol("await");
 
   // html.js
   var TEXT = "TEXT";
@@ -144,10 +144,9 @@
                 component.fn = dynamics[i];
                 componentStack.push(component);
               } else if (!statics[i][j + 1]) {
-                if (result && dynamics.length > i) {
+                if (result) {
                   result += statics[i][j];
                   currentComponent.children.push(result);
-                  currentComponent.children.push(dynamics[i]);
                 }
               } else {
                 result += statics[i][j];
@@ -172,6 +171,10 @@
           } else {
             result += c;
           }
+        }
+        if (COMPONENT_MODE === CHILDREN && dynamics.length > i) {
+          const currentComponent = componentStack[componentStack.length - 1];
+          currentComponent.children.push(dynamics[i]);
         }
         if (result && COMPONENT_MODE !== CHILDREN) {
           yield result;
@@ -227,14 +230,14 @@
       yield* handleIterator(chunk.body);
     } else if (chunk[Symbol.asyncIterator] || chunk[Symbol.iterator]) {
       yield* _render(chunk, promises);
-    } else if (chunk?.fn?.kind === ASYNC_SYMBOL) {
-      const { task, template } = chunk.fn({
+    } else if (chunk?.fn?.kind === AWAIT_SYMBOL) {
+      const { promise, template } = chunk.fn({
         ...chunk.properties.reduce((acc, prop) => ({ ...acc, [prop.name]: prop.value }), {}),
         children: chunk.children
       });
       const id = promises.length;
       promises.push(
-        task().then((data) => ({
+        promise().then((data) => ({
           id,
           template: template({ state: "success", data })
         })).catch((error) => ({
@@ -242,7 +245,7 @@
           template: template({ state: "error", error })
         }))
       );
-      yield* _render(html`<pending-task style="display: contents;" data-id="${id.toString()}">${template({ state: "pending" })}</pending-task>`, promises);
+      yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({ state: "pending" })}</awaiting-promise>`, promises);
     } else if (chunk.kind === COMPONENT_SYMBOL) {
       yield* _render(
         await chunk.fn({
@@ -277,7 +280,7 @@
       yield* render(html(_a || (_a = __template(['\n      <template data-id="', '">', `</template>
       <script>
         {
-          let toReplace = document.querySelector('pending-task[data-id="`, `"]');
+          let toReplace = document.querySelector('awaiting-promise[data-id="`, `"]');
           const template = document.querySelector('template[data-id="`, `"]').content.cloneNode(true);
           toReplace.replaceWith(template);
         }
@@ -288,7 +291,13 @@
 
   // router.js
   var Router = class {
-    constructor({ routes, fallback, baseHref = "" }) {
+    constructor({
+      routes,
+      fallback,
+      plugins = [],
+      baseHref = ""
+    }) {
+      this.plugins = plugins;
       this.fallback = {
         render: fallback,
         params: {}
@@ -296,12 +305,17 @@
       this.routes = routes.map((route) => ({
         ...route,
         urlPattern: new URLPattern({
-          pathname: route.path,
-          baseURL: `${self.location.origin}${baseHref}`,
+          pathname: `${baseHref}${route.path}`,
           search: "*",
           hash: "*"
         })
       }));
+    }
+    _getPlugins(route) {
+      return [
+        ...this.plugins ?? [],
+        ...route?.plugins ?? []
+      ];
     }
     async handleRequest(request) {
       const url = new URL(request.url);
@@ -311,15 +325,29 @@
         if (match) {
           matchedRoute = {
             render: route2.render,
-            params: match?.pathname?.groups ?? {}
+            params: match?.pathname?.groups ?? {},
+            plugins: route2.plugins
           };
           break;
         }
       }
       const route = matchedRoute?.render ?? this?.fallback?.render;
       if (route) {
-        const query = Object.fromEntries(new URLSearchParams(request.url.search));
-        const iterator = render(route({ query, params: matchedRoute?.params, request }));
+        const query = Object.fromEntries(new URLSearchParams(new URL(request.url).search));
+        const params = matchedRoute?.params;
+        const plugins = this._getPlugins(matchedRoute);
+        for (const plugin of plugins) {
+          try {
+            const result = await plugin?.beforeResponse({ query, params, request });
+            if (result) {
+              return result;
+            }
+          } catch (e) {
+            console.log(`Plugin "${plugin.name}" error on beforeResponse hook`, e);
+            throw e;
+          }
+        }
+        const iterator = render(route({ query, params, request }));
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
           async pull(controller) {
@@ -345,23 +373,55 @@
   // demo/pages/HtmlPage.js
   var _a2;
   function HtmlPage({ children, title }) {
-    return html(_a2 || (_a2 = __template(['\n    <html lang="en">\n      <head>\n        <meta charset="utf-8" />\n        <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n        <meta name="Description" content="">\n        <title>', "</title>\n      </head>\n      <body>\n        ", "\n        <script>\n          let refreshing;\n          async function handleUpdate() {\n            // check to see if there is a current active service worker\n            const oldSw = (await navigator.serviceWorker.getRegistration())?.active?.state;\n\n            navigator.serviceWorker.addEventListener('controllerchange', async () => {\n              if (refreshing) return;\n\n              // when the controllerchange event has fired, we get the new service worker\n              const newSw = (await navigator.serviceWorker.getRegistration())?.active?.state;\n\n              // if there was already an old activated service worker, and a new activating service worker, do the reload\n              if (oldSw === 'activated' && newSw === 'activating') {\n                refreshing = true;\n                window.location.reload();\n              }\n            });\n          }\n\n          handleUpdate();\n        <\/script>\n      </body>\n    </html>\n  "])), title ?? "", children);
+    return html(_a2 || (_a2 = __template(['\n    <html lang="en">\n      <head>\n        <meta charset="utf-8" />\n        <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n        <meta name="Description" content="">\n        <title>', '</title>\n      </head>\n      <body>\n        <ul>\n          <li><a href="/">home</a></li>\n          <li><a href="/a">a</a></li>\n          <li><a href="/b">b</a></li>\n        </ul>\n        ', "\n        <script>\n          let refreshing;\n          async function handleUpdate() {\n            // check to see if there is a current active service worker\n            const oldSw = (await navigator.serviceWorker.getRegistration())?.active?.state;\n\n            navigator.serviceWorker.addEventListener('controllerchange', async () => {\n              if (refreshing) return;\n\n              // when the controllerchange event has fired, we get the new service worker\n              const newSw = (await navigator.serviceWorker.getRegistration())?.active?.state;\n\n              // if there was already an old activated service worker, and a new activating service worker, do the reload\n              if (oldSw === 'activated' && newSw === 'activating') {\n                refreshing = true;\n                window.location.reload();\n              }\n            });\n          }\n\n          handleUpdate();\n        <\/script>\n      </body>\n    </html>\n  "])), title ?? "", children);
   }
 
-  // async.js
-  function Async({ task, children }) {
+  // await.js
+  function Await({ promise, children }) {
     return {
-      task,
+      promise,
       template: children.find((c) => typeof c === "function")
     };
   }
-  Async.kind = ASYNC_SYMBOL;
+  Await.kind = AWAIT_SYMBOL;
   var when = (condition, template) => condition ? template() : "";
 
   // demo/sw.js
   var router = new Router({
     fallback: () => html`not found!`,
+    plugins: [
+      {
+        name: "test",
+        async beforeResponse({ request, query, params }) {
+          console.log(1, "global-plugin", request, query, params);
+        }
+      }
+    ],
     routes: [
+      {
+        path: "/a",
+        render: () => html`a`,
+        plugins: [
+          {
+            name: "a-plugin",
+            async beforeResponse({ request, query, params }) {
+              console.log(2, "a-plugin", request, query, params);
+            }
+          }
+        ]
+      },
+      {
+        path: "/b",
+        render: () => html`b`,
+        plugins: [
+          {
+            name: "b-plugin",
+            async beforeResponse({ request, route }) {
+              console.log(3, "b-plugin", request, route);
+            }
+          }
+        ]
+      },
       {
         path: "/",
         render: ({ params, query, request }) => html`
@@ -369,7 +429,7 @@
           <h1>home</h1>
           <ul>
             <li>
-              <${Async} task=${() => new Promise((r) => setTimeout(() => r({ foo: "foo" }), 3e3))}>
+              <${Await} promise=${() => new Promise((r) => setTimeout(() => r({ foo: "foo" }), 3e3))}>
                 ${({ state, data }) => html`
                   ${when(state === "pending", () => html`[PENDING] slow`)}
                   ${when(state === "success", () => html`[RESOLVED] slow`)}
@@ -377,7 +437,7 @@
               <//>
             </li>
             <li>
-              <${Async} task=${() => new Promise((r) => setTimeout(() => r({ bar: "bar" }), 1500))}>
+              <${Await} promise=${() => new Promise((r) => setTimeout(() => r({ bar: "bar" }), 1500))}>
                 ${({ state, data }) => html`
                   ${when(state === "pending", () => html`[PENDING] fast`)}
                   ${when(state === "success", () => html`[RESOLVED] fast`)}

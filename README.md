@@ -128,6 +128,57 @@ const router = new Router({
 });
 ```
 
+### `plugins`
+
+You can also provide plugins. You can add global plugins that will run for every route, or add plugins for specific routes only. If you return a `Response` from a plugin, the router will return that response to the browser instead of your `render` function.
+
+```js
+const logger = {
+  name: 'logger-plugin',
+  beforeResponse({request}) {
+    console.log(`Request made to ${request.url}`);
+  }
+}
+
+const router = new Router({
+  /**
+   * These plugins run for all routes
+   */
+  plugins: [logger],
+  routes: [
+    {
+      path: '/',
+      render: () => html`<${Home}/>`,
+      /**
+       * These plugins run for this route only
+       */
+      plugins: [
+        {
+          name: 'my-plugin',
+          async beforeResponse({query, params, request}) {
+            console.log('Running [my-plugin]!');
+
+            /**
+             * Based on conditions we can return a different response
+             */
+            if (query.foo === 'bar') {
+              return new Response('bar');
+            }
+
+            /**
+             * We can also use plugins for redirects
+             */
+            if (params.user === 'frank') {
+              return Response.redirect('/foo');
+            }
+          }
+        }
+      ]
+    }
+  ]
+});
+```
+
 ## Html
 
 ### Basic usage
@@ -251,13 +302,13 @@ const template = html`
 
 ## Out of order streaming
 
-For out of order streaming you can use the built-in `Async` component and provide a `task` property:
+For out of order streaming you can use the built-in `Await` component and provide a `promise` property:
 
 ```js
-import { Async, when } from 'swtl';
+import { Await, when } from 'swtl';
 
 html`
-  <${Async} task=${() => fetch('/api/foo').then(r => r.json())}>
+  <${Await} promise=${() => fetch('/api/foo').then(r => r.json())}>
     ${({state, data, error}) => html`
       <h1>Fetching data</h1>
       ${when(state === 'pending', () => html`<p>Loading...</p>`)}

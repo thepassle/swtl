@@ -1,7 +1,7 @@
 import { Router } from '../router.js';
 import { html } from '../html.js';
 import { HtmlPage } from './pages/HtmlPage.js';
-import { Async, when } from '../async.js';
+import { Await, when } from '../await.js';
 
 async function* generator() {
   // let i = 0;
@@ -30,7 +30,40 @@ function Baz({children}) {
 
 const router = new Router({
   fallback: () => html`not found!`,
+  plugins: [
+    {
+      name: 'test',
+      async beforeResponse({request, query, params}) {
+        console.log(1, 'global-plugin', request, query, params);
+      }
+    }
+  ],
   routes: [
+    {
+      path: '/a',
+      render: () => html`a`,
+      plugins: [
+        {
+          name: 'a-plugin',
+          async beforeResponse({request, query, params}) {
+            console.log(2, 'a-plugin', request, query, params);
+            // return Response.redirect('/b');
+          }
+        }
+      ]
+    },
+    {
+      path: '/b',
+      render: () => html`b`,
+      plugins: [
+        {
+          name: 'b-plugin',
+          async beforeResponse({request, route}) {
+            console.log(3, 'b-plugin', request, route);
+          }
+        }
+      ]
+    },
     {
       path: '/',
       render: ({params, query, request}) => html`
@@ -38,7 +71,7 @@ const router = new Router({
           <h1>home</h1>
           <ul>
             <li>
-              <${Async} task=${() => new Promise(r => setTimeout(() => r({foo:'foo'}), 3000))}>
+              <${Await} promise=${() => new Promise(r => setTimeout(() => r({foo:'foo'}), 3000))}>
                 ${({state, data}) => html`
                   ${when(state === 'pending', () => html`[PENDING] slow`)}
                   ${when(state === 'success', () => html`[RESOLVED] slow`)}
@@ -46,7 +79,7 @@ const router = new Router({
               <//>
             </li>
             <li>
-              <${Async} task=${() => new Promise(r => setTimeout(() => r({bar:'bar'}), 1500))}>
+              <${Await} promise=${() => new Promise(r => setTimeout(() => r({bar:'bar'}), 1500))}>
                 ${({state, data}) => html`
                   ${when(state === 'pending', () => html`[PENDING] fast`)}
                   ${when(state === 'success', () => html`[RESOLVED] fast`)}

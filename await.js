@@ -1,14 +1,14 @@
-import { ASYNC_SYMBOL } from './symbol.js';
+import { AWAIT_SYMBOL } from './symbol.js';
 
-function Async({task, children}) {
+function Await({promise, children}) {
   return { 
-    task, 
+    promise, 
     template: children.find(c => typeof c === 'function')
   };
 }
 
-Async.kind = ASYNC_SYMBOL;
+Await.kind = AWAIT_SYMBOL;
 
 const when = (condition, template) => condition ? template() : '';
 
-export { Async, when };
+export { Await, when };

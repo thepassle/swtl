@@ -1,7 +1,13 @@
 import { render } from './render.js';
 
 export class Router {
-  constructor({ routes, fallback, baseHref = '' }) {
+  constructor({ 
+    routes, 
+    fallback, 
+    plugins = [], 
+    baseHref = '' 
+  }) {
+    this.plugins = plugins;
     this.fallback = {
       render: fallback,
       params: {}
@@ -16,6 +22,13 @@ export class Router {
     }));
   }
 
+  _getPlugins(route) {
+    return [
+      ...(this.plugins ?? []), 
+      ...(route?.plugins ?? []),
+    ]
+  }
+
   async handleRequest(request) {
     const url = new URL(request.url);
     let matchedRoute;
@@ -27,16 +40,31 @@ export class Router {
         matchedRoute = {
           render: route.render,
           params: match?.pathname?.groups ?? {},
+          plugins: route.plugins,
         };
         break;
       }
     }
 
     const route = matchedRoute?.render ?? this?.fallback?.render;
-    if(route) {
-      const query = Object.fromEntries(new URLSearchParams(request.url.search));
+    if (route) {
+      const query = Object.fromEntries(new URLSearchParams(new URL(request.url).search));
+      const params = matchedRoute?.params;
 
-      const iterator = render(route({query, params: matchedRoute?.params, request}));
+      const plugins = this._getPlugins(matchedRoute);
+      for (const plugin of plugins) {
+        try {
+          const result = await plugin?.beforeResponse({query, params, request});
+          if (result) {
+            return result;
+          }
+        } catch(e) {
+          console.log(`Plugin "${plugin.name}" error on beforeResponse hook`, e);
+          throw e;
+        }
+      }
+
+      const iterator = render(route({query, params, request}));
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
         async pull(controller) {

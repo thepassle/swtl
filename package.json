@@ -1,6 +1,6 @@
 {
   "name": "swtl",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -12,7 +12,7 @@
   "exports": {
     ".": "./index.js",
     "./html.js": "./html.js",
-    "./async.js": "./async.js",
+    "./await.js": "./await.js",
     "./render.js": "./render.js",
     "./router.js": "./router.js",
     "./strategies.js": "./strategies.js"
@@ -22,7 +22,7 @@
     "render.js",
     "router.js",
     "symbol.js",
-    "async.js",
+    "await.js",
     "strategies.js",
     "index.js"
   ],

@@ -10,6 +10,11 @@ export function HtmlPage({children, title}) {
         <title>${title ?? ''}</title>
       </head>
       <body>
+        <ul>
+          <li><a href="/">home</a></li>
+          <li><a href="/a">a</a></li>
+          <li><a href="/b">b</a></li>
+        </ul>
         ${children}
         <script>
           let refreshing;

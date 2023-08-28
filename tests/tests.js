@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import { html } from '../html.js';
 import { renderToString } from '../render.js';
-import { Async, when } from '../async.js';
+import { Await, when } from '../await.js';
 import { COMPONENT_SYMBOL } from '../symbol.js';
 
 function Foo() {}

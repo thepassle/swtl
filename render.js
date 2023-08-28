@@ -1,5 +1,5 @@
 import { html } from './html.js';
-import { ASYNC_SYMBOL, COMPONENT_SYMBOL } from "./symbol.js";
+import { AWAIT_SYMBOL, COMPONENT_SYMBOL } from "./symbol.js";
 
 function hasGetReader(obj) {
   return typeof obj.getReader === "function";
@@ -44,14 +44,14 @@ export async function* handle(chunk, promises) {
     yield* handleIterator(chunk.body);
   } else if (chunk[Symbol.asyncIterator] || chunk[Symbol.iterator]) {
     yield* _render(chunk, promises);
-  } else if (chunk?.fn?.kind === ASYNC_SYMBOL) {
-    const { task, template } = chunk.fn({
+  } else if (chunk?.fn?.kind === AWAIT_SYMBOL) {
+    const { promise, template } = chunk.fn({
       ...chunk.properties.reduce((acc, prop) => ({...acc, [prop.name]: prop.value}), {}),
       children: chunk.children,
     });
     const id = promises.length;
     promises.push(
-      task()
+      promise()
         .then(data => ({
           id,
           template: template({state: 'success', data}) 
@@ -61,7 +61,7 @@ export async function* handle(chunk, promises) {
           template: template({state: 'error', error}) 
         }))
     );
-    yield* _render(html`<pending-task style="display: contents;" data-id="${id.toString()}">${template({state: 'pending'})}</pending-task>`, promises);
+    yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({state: 'pending'})}</awaiting-promise>`, promises);
   } else if (chunk.kind === COMPONENT_SYMBOL) {
     yield* _render(
       await chunk.fn({
@@ -102,7 +102,7 @@ export async function* render(template) {
       <template data-id="${id.toString()}">${template}</template>
       <script>
         {
-          let toReplace = document.querySelector('pending-task[data-id="${id.toString()}"]');
+          let toReplace = document.querySelector('awaiting-promise[data-id="${id.toString()}"]');
           const template = document.querySelector('template[data-id="${id.toString()}"]').content.cloneNode(true);
           toReplace.replaceWith(template);
         }

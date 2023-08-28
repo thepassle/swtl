@@ -1,6 +1,6 @@
 import { html } from './html.js';
 import { render, renderToString } from './render.js';
-import { Async, when } from './async.js';
+import { Await, when } from './await.js';
 
 
 function Html({title}) {
