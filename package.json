@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"esbuild ./demo/sw.js --bundle --outfile=./demo/bundled-sw.js --watch --format=iife\" \"cd demo && npx http-server -o\"",    
+    "dev": "esbuild ./demo/sw.js --bundle --outfile=./demo/bundled-sw.js --watch --format=iife --servedir=demo",
     "start": "node --watch dev.js",
     "test": "node --watch tests/tests.js"
   },
@@ -30,7 +30,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^8.2.0",
     "esbuild": "^0.19.0"
   }
 }
