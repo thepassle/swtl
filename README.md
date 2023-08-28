@@ -94,11 +94,13 @@ const router = new Router({
   baseHref: '/foo/bar/',
   routes: [
     {
-      path: '/',
+      // The url will be: https://my-app.com/foo/bar/
+      path: '',
       render: () => html`<${Home}/>`
     },
     {
-      path: '/users/:id',
+      // The url will be: https://my-app.com/foo/bar/users/1
+      path: 'users/:id',
       render: ({params}) => html`<${User} id=${params.id}/>`
     }
   ]

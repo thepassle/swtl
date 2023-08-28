@@ -9,8 +9,7 @@ export class Router {
     this.routes = routes.map(route => ({
       ...route,
       urlPattern: new URLPattern({
-        pathname: route.path,
-        baseURL: `${self.location.origin}${baseHref}`,
+        pathname: `${baseHref}${route.path}`,
         search: '*',
         hash: '*',
       })
