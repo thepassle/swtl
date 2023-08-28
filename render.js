@@ -54,14 +54,14 @@ export async function* handle(chunk, promises) {
       promise()
         .then(data => ({
           id,
-          template: template({state: 'success', data}) 
+          template: template({pending: false, error: false, success: true}, data, null) 
         }))
         .catch(error => ({
           id,
-          template: template({state: 'error', error}) 
+          template: template({pending: false, error: true, success: false}, null, error) 
         }))
     );
-    yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({state: 'pending'})}</awaiting-promise>`, promises);
+    yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({pending: true, error: false, success: false}, null, null)}</awaiting-promise>`, promises);
   } else if (chunk.kind === COMPONENT_SYMBOL) {
     yield* _render(
       await chunk.fn({

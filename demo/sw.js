@@ -73,17 +73,17 @@ const router = new Router({
           <ul>
             <li>
               <${Await} promise=${() => new Promise(r => setTimeout(() => r({foo:'foo'}), 3000))}>
-                ${({state, data}) => html`
-                  ${when(state === 'pending', () => html`[PENDING] slow`)}
-                  ${when(state === 'success', () => html`[RESOLVED] slow`)}
+                ${({pending, success}, data) => html`
+                  ${when(pending, () => html`[PENDING] slow`)}
+                  ${when(success, () => html`[RESOLVED] slow ${data.foo}`)}
                 `}
               <//>
-            </li>
+            </li> 
             <li>
               <${Await} promise=${() => new Promise(r => setTimeout(() => r({bar:'bar'}), 1500))}>
-                ${({state, data}) => html`
-                  ${when(state === 'pending', () => html`[PENDING] fast`)}
-                  ${when(state === 'success', () => html`[RESOLVED] fast`)}
+                ${({pending, success}, data) => html`
+                  ${when(pending, () => html`[PENDING] fast`)}
+                  ${when(success, () => html`[RESOLVED] fast ${data.bar}`)}
                 `}
               <//>
             </li>

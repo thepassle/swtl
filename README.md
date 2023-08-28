@@ -318,11 +318,11 @@ import { Await, when } from 'swtl';
 
 html`
   <${Await} promise=${() => fetch('/api/foo').then(r => r.json())}>
-    ${({state, data, error}) => html`
+    ${(status, data, error) => html`
       <h1>Fetching data</h1>
-      ${when(state === 'pending', () => html`<p>Loading...</p>`)}
-      ${when(state === 'error', () => html`<p>Failed to fetch data</p>`)}
-      ${when(state === 'success', () => html`
+      ${when(status.pending, () => html`<p>Loading...</p>`)}
+      ${when(status.error, () => html`<p>Failed to fetch data</p>`)}
+      ${when(status.success, () => html`
         <ul>
           ${data.map(i => html`<li>${i}</li>`)}
         </ul>
