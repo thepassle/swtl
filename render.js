@@ -56,10 +56,13 @@ export async function* handle(chunk, promises) {
           id,
           template: template({pending: false, error: false, success: true}, data, null) 
         }))
-        .catch(error => ({
-          id,
-          template: template({pending: false, error: true, success: false}, null, error) 
-        }))
+        .catch(error => {
+          console.error(error.stack);
+          return {
+            id,
+            template: template({pending: false, error: true, success: false}, null, error) 
+          }
+        })
     );
     yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({pending: true, error: false, success: false}, null, null)}</awaiting-promise>`, promises);
   } else if (chunk.kind === COMPONENT_SYMBOL) {
