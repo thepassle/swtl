@@ -8,7 +8,7 @@ function Html({title}) {
 }
 
 // @TODO BUG!
-const bug2 = html`<${Html} title="blog ${2}"/>`
+const bug2 = html`<div hidden id="foo">${undefined}</div>`
 // Cant have static AND dynamic in a property, it will hang and not render
 // add testcase
 

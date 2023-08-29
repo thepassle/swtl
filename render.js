@@ -37,12 +37,12 @@ export async function* handle(chunk, promises) {
     yield chunk;
   } else if (Array.isArray(chunk)) {
     yield* _render(chunk, promises);
-  } else if (typeof chunk.then === "function") {
+  } else if (typeof chunk?.then === "function") {
     const v = await chunk;
     yield* handle(v, promises);
   } else if (chunk instanceof Response && chunk.body) {
     yield* handleIterator(chunk.body);
-  } else if (chunk[Symbol.asyncIterator] || chunk[Symbol.iterator]) {
+  } else if (chunk?.[Symbol.asyncIterator] || chunk?.[Symbol.iterator]) {
     yield* _render(chunk, promises);
   } else if (chunk?.fn?.kind === AWAIT_SYMBOL) {
     const { promise, template } = chunk.fn({
@@ -65,7 +65,7 @@ export async function* handle(chunk, promises) {
         })
     );
     yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({pending: true, error: false, success: false}, null, null)}</awaiting-promise>`, promises);
-  } else if (chunk.kind === COMPONENT_SYMBOL) {
+  } else if (chunk?.kind === COMPONENT_SYMBOL) {
     yield* _render(
       await chunk.fn({
         ...chunk.properties.reduce((acc, prop) => ({...acc, [prop.name]: prop.value}), {}),
@@ -74,7 +74,7 @@ export async function* handle(chunk, promises) {
       promises
     );
   } else {
-    yield chunk.toString();
+    yield chunk?.toString();
   }
 }
 
