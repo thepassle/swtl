@@ -176,6 +176,10 @@ export function* html(statics, ...dynamics) {
                 } else if (statics[i][j] === '/') {
                   const component = componentStack.pop();
                   if (!componentStack.length) {
+                    PROP_MODE = NONE;
+                    COMPONENT_MODE = NONE;
+                    MODE = TEXT;
+                    j++;
                     yield component;
                   }
                 }

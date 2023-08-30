@@ -65,6 +65,12 @@ describe('parsing', () => {
     assert.equal(result[1].fn, Foo);
     assert.deepStrictEqual(result[2], `<h2>bye</h2>`);
   });
+
+  it('handles components with properties and expressions', () => {
+    const result = unwrap(html`<${Foo} a=${1}/>${2}`);
+    assert.equal(result[0].fn, Foo);
+    assert.equal(result[1], 2);
+  });
 });
 
 describe('properties', () => {

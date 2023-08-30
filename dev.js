@@ -7,9 +7,9 @@ function Html({title}) {
   return html`<html>${title}</html>`
 }
 
-function Foo({data}) {
-  return html`<h1>hi</h1>`
-}
+// function Foo({data}) {
+//   return html`<h1>hi</h1>`
+// }
 
 // @TODO BUG!
 const bug2 = html`
@@ -21,13 +21,13 @@ const bug2 = html`
   <//>
 `
 
-const bug3 = html`
-  <${Await} promise=${() => new Promise(r => setTimeout(() => r({foo:'foo'}), 500))}>
-    ${({pending, success, error}, data) => html`
-      <${Foo} data=${data}/>
-    `}
-  <//>
-`
+function Foo({a}) {
+  return html`${a}`;
+}
+
+// at the end of SETTING a prop, it looks like we dont close off the COMPONENT_MODE correctly
+// when handling ${2} its still on COMPONENT_MODE === CHILDREN
+const bug3 = html`<${Foo} a=${1}/>${2}`
 
 // const data = 1;
 // const bug4 = html`<${Foo} b=${data}/>`
