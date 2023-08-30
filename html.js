@@ -255,7 +255,7 @@ export function* html(statics, ...dynamics) {
                * @example <${Foo}><h1>hi ${2}</h1><//>
                *                  ^^^^^^^       
                */
-              if(result) {
+              if(result && currentComponent) {
                 result += statics[i][j];
                 currentComponent.children.push(result);
               }

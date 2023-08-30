@@ -75,11 +75,16 @@ export class HtmlResponse {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async pull(controller) {
-        const { value, done } = await iterator.next();
-        if (done) {
-          controller.close();
-        } else {
-          controller.enqueue(encoder.encode(value));
+        try {
+          const { value, done } = await iterator.next();
+          if (done) {
+            controller.close();
+          } else {
+            controller.enqueue(encoder.encode(value));
+          }
+        } catch(e) {
+          console.error(e.stack);
+          throw e;
         }
       }
     });

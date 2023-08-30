@@ -35,6 +35,8 @@ async function* handleIterator(iterable) {
 export async function* handle(chunk, promises) {
   if (typeof chunk === "string") {
     yield chunk;
+  } else if (typeof chunk === "function") {
+    yield* handle(chunk(), promises);
   } else if (Array.isArray(chunk)) {
     yield* _render(chunk, promises);
   } else if (typeof chunk?.then === "function") {
