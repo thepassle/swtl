@@ -1,5 +1,7 @@
 # swtl
 
+> Check out the [swtl-starter](https://github.com/thepassle/swtl-starter) app
+
 A Service Worker Templating Language (`swtl`) for component-like templating in service workers. Streams templates to the browser as they're being parsed, and handles rendering iterables/Responses in templates by default.
 
 ```bash
