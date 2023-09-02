@@ -336,6 +336,14 @@ describe('renderToString', () => {
     assert.equal(result, '<main><h1>hello</h1></main>');
   });
 
+  it('Component returning response', async () => {
+    function Foo() {
+      return new Response('hi');
+    }
+    const result = await renderToString(html`<main><${Foo}/></main>`);
+    assert.equal(result, '<main>hi</main>');
+  });
+
   // it('Async', async () => {
   //   const result = await renderToString(html`<${Async} task=${() => new Promise(r => setTimeout(() => r({foo: 'bar'}), 100))}>
   //     ${({state, data}) => html`

@@ -68,7 +68,7 @@ export async function* handle(chunk, promises) {
     );
     yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({pending: true, error: false, success: false}, null, null)}</awaiting-promise>`, promises);
   } else if (chunk?.kind === COMPONENT_SYMBOL) {
-    yield* _render(
+    yield* handle(
       await chunk.fn({
         ...chunk.properties.reduce((acc, prop) => ({...acc, [prop.name]: prop.value}), {}),
         children: chunk.children,
