@@ -76,7 +76,12 @@ export async function* handle(chunk, promises) {
       promises
     );
   } else {
-    yield chunk?.toString();
+    const stringified = chunk?.toString();
+    if(stringified === '[object Object]') {
+      yield JSON.stringify(chunk);
+    } else {
+      yield stringified;
+    }
   }
 }
 

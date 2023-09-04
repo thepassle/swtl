@@ -303,6 +303,11 @@ describe('renderToString', () => {
     const result = await renderToString(html`<h1>${0}${false}</h1>`);
     assert.equal(result, '<h1>0false</h1>');
   });
+
+  it('objects', async () => {
+    const result = await renderToString(html`<h1>${{a: 2}}</h1>`);
+    assert.equal(result, '<h1>{"a":2}</h1>');
+  });
   
   it('components nested children', async () => {
     const result = await renderToString(html`<${Bar}><${Baz}>baz<//><//>`);
