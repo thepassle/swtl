@@ -64,7 +64,7 @@ export class Router {
         }
       }
 
-      return new HtmlResponse(route({query, params, request}));
+      return new HtmlResponse(await route({query, params, request}));
     }
   }
 }
