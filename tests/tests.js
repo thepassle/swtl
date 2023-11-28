@@ -53,10 +53,36 @@ describe('parsing', () => {
     assert.deepStrictEqual(result[1], [1,2]);
   });
 
-  it('handles components', () => {
+  it('handles components with self-closing tag', () => {
     const result = unwrap(html`<h1>hello</h1><${Foo}/>`);
     assert.deepStrictEqual(result[0], `<h1>hello</h1>`);
     assert.deepStrictEqual(result[1].fn, Foo);
+  });
+
+  it('handles components with double slash closing tag', () => {
+    const result = unwrap(html`<h1>hello</h1><${Foo}><//>`);
+    assert.deepStrictEqual(result[0], `<h1>hello</h1>`);
+    assert.deepStrictEqual(result[1].fn, Foo);
+  });
+
+  it('handles components with children', () => {
+    const result = unwrap(html`<${Foo}><h1>hello</h1><//>`);
+    assert.deepStrictEqual(result[0].children[0], `<h1>hello</h1>`);
+  });
+
+  it('handles nested components with children', () => {
+    const result = unwrap(html`<${Foo}><${Bar}><h1>hello</h1><//><//>`);
+    assert.deepStrictEqual(result[0].children[0].children[0], `<h1>hello</h1>`);
+  });
+
+  it('handles components with content that has double slash in it', () => {
+    const result = unwrap(html`<${Foo}><iframe src="https://example.com"></iframe><//>`);
+    assert.deepStrictEqual(result[0].children[0], `<iframe src="https://example.com"></iframe>`);
+  });
+
+  it('handles components with content that has double slash in it', () => {
+    const result = unwrap(html`<${Foo}><a href="https://example.com">Example</a><//>`);
+    assert.deepStrictEqual(result[0].children[0], `<a href="https://example.com">Example</a>`);
   });
 
   it('handles html after components', () => {

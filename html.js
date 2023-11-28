@@ -225,7 +225,7 @@ export function* html(statics, ...dynamics) {
              * @example <${Foo}>children<//>
              *                           ^^
              */
-            if (statics[i][j + 1] === "/" && statics[i][j + 2] === "/") {
+            if (statics[i][j] === "<" && statics[i][j + 1] === "/" && statics[i][j + 2] === "/") {
               if (result) {
                 currentComponent.children.push(result);
                 result = '';
