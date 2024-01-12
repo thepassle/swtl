@@ -66,7 +66,11 @@ export async function* handle(chunk, promises) {
           }
         })
     );
-    yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({pending: true, error: false, success: false}, null, null)}</awaiting-promise>`, promises);
+    // yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({pending: true, error: false, success: false}, null, null)}</awaiting-promise>`, promises);
+    yield* _render(html`
+      <slot name="${id.toString()}">
+        ${template({pending: true, error: false, success: false}, null, null)}
+      </slot>`, promises);
   } else if (chunk?.kind === COMPONENT_SYMBOL) {
     yield* handle(
       await chunk.fn({
@@ -109,14 +113,7 @@ export async function* render(template) {
     const { id, template } = nextPromise;
 
     yield* render(html`
-      <template data-id="${id.toString()}">${template}</template>
-      <script>
-        {
-          let toReplace = document.querySelector('awaiting-promise[data-id="${id.toString()}"]');
-          const template = document.querySelector('template[data-id="${id.toString()}"]').content.cloneNode(true);
-          toReplace.replaceWith(template);
-        }
-      </script>
+      <div slot="${id.toString()}">${template}</div>
     `)
   }
 }

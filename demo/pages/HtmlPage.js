@@ -15,7 +15,6 @@ export function HtmlPage({children, title}) {
           <li><a href="/a">a</a></li>
           <li><a href="/b">b</a></li>
         </ul>
-        ${children}
         <script>
           let refreshing;
           async function handleUpdate() {
@@ -38,6 +37,13 @@ export function HtmlPage({children, title}) {
 
           handleUpdate();
         </script>
+        <template shadowrootmode="open">
+          <slot>
+          </slot>
+       // can you nest named slots in slots? that would eliminate the problem of having all your content in shadow dom and global css still works
+       
+          ${children}
+        </template>
       </body>
     </html>
   `
