@@ -26,7 +26,7 @@ const router = new Router({
   routes: [
     {
       path: '/',
-      render: ({params, query, request}) => html`
+      render: ({url, params, query, request}) => html`
         <${HtmlPage} title="Home">
           <h1>Home</h1>
           <nav>
@@ -75,7 +75,7 @@ const router = new Router({
     },
     {
       path: '/:foo/:bar',
-      render: ({params, query, request}) => html`<h1>${params.foo}/${params.bar}</h1>`
+      render: ({url, params, query, request}) => html`<h1>${params.foo}/${params.bar}</h1>`
     },
   ]
 });
@@ -159,7 +159,7 @@ const router = new Router({
       plugins: [
         {
           name: 'my-plugin',
-          async beforeResponse({query, params, request}) {
+          async beforeResponse({url, query, params, request}) {
             console.log('Running [my-plugin]!');
 
             /**

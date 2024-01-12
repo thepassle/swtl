@@ -48,13 +48,14 @@ export class Router {
 
     const route = matchedRoute?.render ?? this?.fallback?.render;
     if (route) {
-      const query = Object.fromEntries(new URLSearchParams(new URL(request.url).search));
+      const url = new URL(request.url);
+      const query = Object.fromEntries(new URLSearchParams(url.search));
       const params = matchedRoute?.params;
 
       const plugins = this._getPlugins(matchedRoute);
       for (const plugin of plugins) {
         try {
-          const result = await plugin?.beforeResponse({query, params, request});
+          const result = await plugin?.beforeResponse({url, query, params, request});
           if (result) {
             return result;
           }
@@ -64,7 +65,7 @@ export class Router {
         }
       }
 
-      return new HtmlResponse(await route({query, params, request}));
+      return new HtmlResponse(await route({url, query, params, request}));
     }
   }
 }
