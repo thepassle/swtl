@@ -72,7 +72,7 @@ export class Router {
 }
 
 export class HtmlResponse {
-  constructor(template, options) {
+  constructor(template, options = {}) {
     const iterator = render(template);
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
