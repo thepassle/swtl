@@ -38,6 +38,7 @@ export class Router {
       const match = route.urlPattern.exec(url);
       if(match) {
         matchedRoute = {
+          options: route.options,
           render: route.render,
           params: match?.pathname?.groups ?? {},
           plugins: route.plugins,
@@ -65,13 +66,13 @@ export class Router {
         }
       }
 
-      return new HtmlResponse(await route({url, query, params, request}));
+      return new HtmlResponse(await route({url, query, params, request}), matchedRoute?.options ?? {});
     }
   }
 }
 
 export class HtmlResponse {
-  constructor(template) {
+  constructor(template, options = {}) {
     const iterator = render(template);
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
@@ -95,7 +96,9 @@ export class HtmlResponse {
       headers: { 
         'Content-Type': 'text/html', 
         'Transfer-Encoding': 'chunked', 
-      } 
+        ...(options?.headers ?? {})
+      },
+      ...options
     });
   }
 }

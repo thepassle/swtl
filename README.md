@@ -190,6 +190,26 @@ const router = new Router({
 });
 ```
 
+### `options`
+
+You can also provide `options`, the `options` will be passed to the `Response` that `handleRequest` returns:
+
+```js
+const router = new Router({
+  routes: [
+    {
+      path: '/foo',
+      render: () => html`foo`,
+      options: {
+        headers: {
+          'content-type': 'text/xml'
+        }
+      }
+    }
+  ],
+});
+```
+
 ## Html
 
 ### Basic usage
