@@ -1,6 +1,6 @@
 {
   "name": "swtl",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -15,7 +15,8 @@
     "./await.js": "./await.js",
     "./render.js": "./render.js",
     "./router.js": "./router.js",
-    "./strategies.js": "./strategies.js"
+    "./strategies.js": "./strategies.js",
+    "./slot.js": "./slot.js"
   },
   "files": [
     "html.js",
@@ -24,7 +25,8 @@
     "symbol.js",
     "await.js",
     "strategies.js",
-    "index.js"
+    "index.js",
+    "slot.js"
   ],
   "keywords": [],
   "author": "",

@@ -1,5 +1,5 @@
 import { html } from './html.js';
-import { AWAIT_SYMBOL, COMPONENT_SYMBOL } from "./symbol.js";
+import { SLOT_SYMBOL, AWAIT_SYMBOL, COMPONENT_SYMBOL } from "./symbol.js";
 
 function hasGetReader(obj) {
   return typeof obj.getReader === "function";
@@ -68,10 +68,22 @@ export async function* handle(chunk, promises) {
     );
     yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({pending: true, error: false, success: false}, null, null)}</awaiting-promise>`, promises);
   } else if (chunk?.kind === COMPONENT_SYMBOL) {
+    const children = [];
+    const slots = {};
+    for (const child of chunk.children) {
+      if (child?.fn?.kind === SLOT_SYMBOL) {
+        const name = child.properties.find(prop => prop.name === 'name')?.value || 'default';
+        slots[name] = child.children;
+      } else {
+        children.push(child);
+      }
+    }
+
     yield* handle(
       await chunk.fn({
         ...chunk.properties.reduce((acc, prop) => ({...acc, [prop.name]: prop.value}), {}),
-        children: chunk.children,
+        children,
+        slots
       }),
       promises
     );
