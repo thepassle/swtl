@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import { html } from '../html.js';
 import { renderToString } from '../render.js';
 import { Await, when } from '../await.js';
+import { Slot } from '../slot.js';
 import { COMPONENT_SYMBOL } from '../symbol.js';
 import { Router } from '../router.js';
 
@@ -233,6 +234,7 @@ describe('children', () => {
           fn: Bar,
           properties: [],
           children: [],
+          slots: {},
           kind: COMPONENT_SYMBOL
         }
       ]);
@@ -246,6 +248,7 @@ describe('children', () => {
           fn: Bar,
           properties: [],
           children: [],
+          slots: {},
           kind: COMPONENT_SYMBOL
         }
       ]);
@@ -259,12 +262,14 @@ describe('children', () => {
           fn: Bar,
           properties: [],
           children: [],
+          slots: {},
           kind: COMPONENT_SYMBOL
         },
         {
           fn: Baz,
           properties: [],
           children: [],
+          slots: {},
           kind: COMPONENT_SYMBOL
         },
       ]);
@@ -281,12 +286,14 @@ describe('children', () => {
           fn: Bar,
           properties: [],
           children: [],
+          slots: {},
           kind: COMPONENT_SYMBOL
         },
         {
           fn: Baz,
           properties: [],
           children: [],
+          slots: {},
           kind: COMPONENT_SYMBOL
         },
       ]);
@@ -415,11 +422,51 @@ describe('renderToString', () => {
   }); 
 });
 
+describe('slots', () => {
+  function Default({slots}) {
+    return html`<h1>${slots.default}</h1>`;
+  }
+
+  function OnlyNamed({slots}) {
+    return html`<h1>${slots?.foo}</h1>`;
+  }
+
+  function DefaultAndNamed({slots}) {
+    return html`<h1>${slots?.default}</h1><h2>${slots?.foo}</h2>`;
+  }
+
+  function MultipleNamed({slots}) {
+    return html`<h1>${slots?.foo}</h1><h2>${slots?.bar}</h2>`;
+  }
+
+  it('default', async () => {
+    const result = await renderToString(html`<${Default}><${Slot}>hi<//><//>`);
+    assert.equal(result, '<h1>hi</h1>');  
+  });
+
+  it('default and named', async () => {
+    const result = await renderToString(html`<${DefaultAndNamed}><${Slot}>hi<//><${Slot} name="foo">foo<//><//>`);
+    assert.equal(result, '<h1>hi</h1><h2>foo</h2>');  
+  });
+
+  it('multiple named', async () => {
+    const result = await renderToString(html`<${MultipleNamed}><${Slot} name="foo">foo<//><${Slot} name="bar">bar<//><//>`);
+    assert.equal(result, '<h1>foo</h1><h2>bar</h2>');  
+  });
+  
+  it('only named', async () => {
+    const result = await renderToString(html`<${OnlyNamed}><${Slot} name="foo">foo<//><//>`);
+    assert.equal(result, '<h1>foo</h1>');  
+  });
+});
+
+
 globalThis.URLPattern = class URLPattern {
   exec() {
     return true;
   }
 }
+
 describe('Router', () => {
   it('creates a default response', async () => {
     const router = new Router({

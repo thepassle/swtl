@@ -38,6 +38,7 @@ export function* html(statics, ...dynamics) {
       let result = "";
       const component = {
         kind: COMPONENT_SYMBOL,
+        slots: {},
         properties: [],
         children: [],
         fn: undefined,
@@ -259,7 +260,7 @@ export function* html(statics, ...dynamics) {
                * @example <${Foo}><h1>hi ${2}</h1><//>
                *                  ^^^^^^^       
                */
-              if(result && currentComponent) {
+              if (result && currentComponent) {
                 result += statics[i][j];
                 currentComponent.children.push(result);
               }
@@ -294,7 +295,7 @@ export function* html(statics, ...dynamics) {
         }
       }
   
-      if(COMPONENT_MODE === CHILDREN && dynamics.length > i) {
+      if (COMPONENT_MODE === CHILDREN && dynamics.length > i) {
         const currentComponent = componentStack[componentStack.length - 1];
         currentComponent.children.push(dynamics[i]);
       }

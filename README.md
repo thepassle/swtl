@@ -259,6 +259,33 @@ html`<${MyComponent} title="hello" foo=${1} ...bar=${object} bool/>`;
  */
 ```
 
+### Slots
+
+In addition to `children`, SWTL also supports `slots`, for when you need a little more flexibility for composition. You can use `slots` like so:
+
+```js
+import { Slot } from 'swtl';
+
+function Parent({slots}) {
+  return html`
+    <h1>${slots.default}</h1>
+    <h2>${slots.bar}</h2>
+    <h3>${slots.baz}</h3>
+  `;
+}
+
+html`<${Parent}>
+  <${Slot}>Foo<//>
+  <${Slot} name="bar">Bar<//>
+  <${Slot} name="baz">Baz<//>
+<//>`
+
+// Output:
+// <h1>Foo</h1>
+// <h2>Bar</h2>
+// <h3>Baz</h3>
+```
+
 ### Iterables/Responses
 
 You can also use iterables or [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response)s in your templates directly
