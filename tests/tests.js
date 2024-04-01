@@ -117,8 +117,7 @@ describe('parsing', () => {
 
       it('no self-closing', () => {
         try {
-          const result = unwrap(html`<my-el foo=bar/>`);
-          console.log(result);
+          unwrap(html`<my-el foo=bar/>`);
         } catch(e) {
           assert.equal(e.message, 'Custom elements cannot be self-closing: "my-el"');
         }

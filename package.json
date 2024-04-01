@@ -34,8 +34,11 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@lit-labs/ssr": "^3.2.2",
     "esbuild": "^0.19.0",
     "lit": "^3.1.2"
+  },
+  "dependencies": {
+    "@lit-labs/ssr": "^3.2.2",
+    "@lit-labs/ssr-dom-shim": "^1.2.0"
   }
 }
