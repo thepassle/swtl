@@ -1,10 +1,12 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
+import { LitElement, css, html as litHtml } from 'lit';
 import { html } from '../html.js';
 import { renderToString } from '../render.js';
+import { litRenderer } from '../ssr/lit.js';
 import { Await, when } from '../await.js';
 import { Slot } from '../slot.js';
-import { COMPONENT_SYMBOL } from '../symbol.js';
+import { COMPONENT_SYMBOL, CUSTOM_ELEMENT_SYMBOL } from '../symbol.js';
 import { Router } from '../router.js';
 
 function Foo() {}
@@ -28,6 +30,145 @@ function unwrap(generator) {
 }
 
 describe('parsing', () => {
+  describe('custom elements', () => {
+    it('basic', () => {
+      const result = unwrap(html`<my-el></my-el>`);
+      assert.equal(result[0].tag, 'my-el');
+      assert.equal(result[0].kind, CUSTOM_ELEMENT_SYMBOL);
+      assert.deepEqual(result[0].attributes, []);
+      assert.deepEqual(result[0].children, []);
+    });
+
+    it('no self-closing', () => {
+      try {
+        unwrap(html`<my-el/>`);
+      } catch(e) {
+        assert.equal(e.message, 'Custom elements cannot be self-closing: "my-el"');
+      }
+    });
+
+    it('siblings custom elements', () => {
+      const result = unwrap(html`<foo-el></foo-el><bar-el></bar-el>`);
+      assert.equal(result[0].tag, 'foo-el');
+      assert.equal(result[1].tag, 'bar-el');
+    });
+
+    it('siblings swtl component', () => {
+      const result = unwrap(html`<foo-el></foo-el><${Foo}/>`);
+      assert.equal(result[0].tag, 'foo-el');
+      assert.equal(result[0].kind, CUSTOM_ELEMENT_SYMBOL);
+      assert.equal(result[1].kind, COMPONENT_SYMBOL);
+    });
+
+    it('siblings text', () => {
+      const result = unwrap(html`hello<foo-el></foo-el>world`);
+      assert.equal(result[0], 'hello');
+      assert.equal(result[1].tag, 'foo-el');
+      assert.equal(result[2], 'world');
+    });
+
+    describe('attributes', () => {
+      it('no quote', () => {
+        const result = unwrap(html`<my-el foo=b></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: 'b'}]);
+      });
+  
+      it('single quote', () => {
+        const result = unwrap(html`<my-el foo='b'></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: 'b'}]);
+      });
+  
+      it('double quote', () => {
+        const result = unwrap(html`<my-el foo="b"></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: 'b'}]);
+      });
+  
+      it('multiple char attribute', () => {
+        const result = unwrap(html`<my-el foo="bar"></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: 'bar'}]);
+      });
+
+      it('dynamic val', () => {
+        const result = unwrap(html`<my-el foo="${1}"></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: '1'}]);
+      });
+
+      it('boolean', () => {
+        const result = unwrap(html`<my-el foo></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: true}]);
+      });
+
+      it('multiple attributes', () => {
+        const result = unwrap(html`<my-el foo="bar" bar="baz"></my-el>`);
+        assert.deepEqual(result[0].attributes, [
+          {name: 'foo', value: 'bar'},
+          {name: 'bar', value: 'baz'},
+        ]);
+      });
+
+      it('spread', () => {
+        const s = { a: 1, b: 2 };
+        const result = unwrap(html`<my-el ...${s}></my-el>`);
+        assert.deepEqual(result[0].attributes, [
+          {name: 'a', value: 1},
+          {name: 'b', value: 2},
+        ]);
+      });
+
+      it('no self-closing', () => {
+        try {
+          const result = unwrap(html`<my-el foo=bar/>`);
+          console.log(result);
+        } catch(e) {
+          assert.equal(e.message, 'Custom elements cannot be self-closing: "my-el"');
+        }
+      });
+    });
+
+    describe('children', () => {
+      it('basic', () => {
+        const result = unwrap(html`<my-el>a</my-el>`);
+        assert.deepEqual(result[0].children, ['a']);
+      });
+
+      it('dynamic', () => {
+        const result = unwrap(html`<my-el>a ${1} b</my-el>`);
+        assert.deepEqual(result[0].children, ['a ', 1, ' b']);
+      });
+      
+      it('nested swtl component', () => {
+        const result = unwrap(html`<my-el><${Foo}/></my-el>`);
+        assert.equal(result[0].kind, CUSTOM_ELEMENT_SYMBOL);
+        assert.equal(result[0].children[0].kind, COMPONENT_SYMBOL);
+      });
+
+      it('double nested swtl component', () => {
+        const result = unwrap(html`<my-el><${Foo}><${Bar}><//><//></my-el>`);
+        assert.equal(result[0].kind, CUSTOM_ELEMENT_SYMBOL);
+        assert.equal(result[0].children[0].kind, COMPONENT_SYMBOL);
+        assert.equal(result[0].children[0].children[0].kind, COMPONENT_SYMBOL);
+      });
+      
+      it('nested custom element', () => {
+        const result = unwrap(html`<foo-el><bar-el></bar-el></foo-el>`);
+        assert.equal(result[0].kind, CUSTOM_ELEMENT_SYMBOL);
+        assert.equal(result[0].children[0].kind, CUSTOM_ELEMENT_SYMBOL);
+      });
+
+      it('custom element child of swtl component', () => {
+        const result = unwrap(html`<${Foo}><my-el></my-el><//>`);
+        assert.equal(result[0].kind, COMPONENT_SYMBOL);
+        assert.equal(result[0].children[0].kind, CUSTOM_ELEMENT_SYMBOL);
+      });
+
+      it('custom element child of swtl component with sibling', () => {
+        const result = unwrap(html`<${Foo}><h1>a</h1><my-el></my-el><//>`);
+        assert.equal(result[0].children[0], '<h1>a</h1>');
+        assert.equal(result[0].children[1].kind, CUSTOM_ELEMENT_SYMBOL);
+      });
+    });
+  });
+
   it('handles html', () => {
     const result = unwrap(html`<h1>hello</h1>`);
     assert.deepStrictEqual(result[0], `<h1>hello</h1>`);
@@ -383,30 +524,97 @@ describe('renderToString', () => {
     assert.equal(result, '<main>hi</main>');
   });
 
-  // it('Async', async () => {
-  //   const result = await renderToString(html`<${Async} task=${() => new Promise(r => setTimeout(() => r({foo: 'bar'}), 100))}>
-  //     ${({state, data}) => html`
-  //       ${when(state === 'pending', () => html`[PENDING]`)}
-  //       ${when(state === 'success', () => html`[RESOLVED] ${data.foo}`)}
-  //     `}
-  //   <//>`);
-  //   console.log(result);
-  //   assert.equal(result, `<pending-task style="display: contents;" data-id="0">
-  //   [PENDING]
+  describe('custom element renderer', () => {
+    describe('default', () => {
+      it('basic', async () => {
+        const result = await renderToString(html`<my-el foo=1 bar>children</my-el>`);
+        assert.equal(result, '<my-el foo="1" bar>children</my-el>');
+      });
+
+      it('nested swtl component', async () => {
+        function Foo() {
+          return html`<h1>foo</h1>`
+        }
+        const result = await renderToString(html`<my-el foo=1 bar><${Foo}/></my-el>`);
+        assert.equal(result, '<my-el foo="1" bar><h1>foo</h1></my-el>');
+      });
+
+      it('nested custom element', async () => {
+        function Foo({children}) {
+          return html`<h1>${children}</h1>`
+        }
+        const result = await renderToString(html`<${Foo}><my-el></my-el><//>`);
+        assert.equal(result, '<h1><my-el></my-el></h1>');
+      });
+    });
+
+    describe('lit', () => {
+      class FooEl extends LitElement {
+        static styles = css`h1 { color: red; }`;
+        static properties = { 
+          disabled: { type: Boolean },
+          foo: { type: String },
+        };
+        render() {
+          return litHtml`<h1>foo: ${this.foo} ${this.disabled ? 'disabled' : 'not disabled'}</h1>`;
+        }
+      }
+
+      customElements.define('foo-el', FooEl);
+
+      it('basic', async () => {
+        const result = await renderToString(html`<foo-el foo="bar" disabled>children</foo-el>`, litRenderer);
+        assert(result.includes('<foo-el>'));
+        assert(result.includes('<template shadowroot="open" shadowrootmode="open">'));
+        assert(result.includes('<style>h1 { color: red; }</style>'));
+        assert(result.includes('disabled'));
+        assert(result.includes('bar'));
+        assert(result.includes('children'));
+        assert(result.includes('</template>'));
+        assert(result.includes('</foo-el>'));
+      });
+
+      it('nested swtl component', async () => {
+        function Foo() {
+          return html`<h2>Foo</h2>`
+        }
+        const result = await renderToString(html`<foo-el foo="bar" disabled><${Foo}/></foo-el>`, litRenderer);
+        assert(result.includes('<foo-el>'));
+        assert(result.includes('<template shadowroot="open" shadowrootmode="open">'));
+        assert(result.includes('<style>h1 { color: red; }</style>'));
+        assert(result.includes('disabled'));
+        assert(result.includes('bar'));
+        assert(result.includes('<h2>Foo</h2>'));
+        assert(result.includes('</template>'));
+        assert(result.includes('</foo-el>'));
+      });
+    });
+  });
+
+//   // it('Async', async () => {
+//   //   const result = await renderToString(html`<${Async} task=${() => new Promise(r => setTimeout(() => r({foo: 'bar'}), 100))}>
+//   //     ${({state, data}) => html`
+//   //       ${when(state === 'pending', () => html`[PENDING]`)}
+//   //       ${when(state === 'success', () => html`[RESOLVED] ${data.foo}`)}
+//   //     `}
+//   //   <//>`);
+//   //   console.log(result);
+//   //   assert.equal(result, `<pending-task style="display: contents;" data-id="0">
+//   //   [PENDING]
     
-  // </pending-task>
-  // <template data-id="0">
+//   // </pending-task>
+//   // <template data-id="0">
     
-  //   [RESOLVED] bar
-  // </template>
-  // <script>
-  //   {
-  //     let toReplace = document.querySelector('pending-task[data-id="0"]');
-  //     const template = document.querySelector('template[data-id="0"]').content.cloneNode(true);
-  //     toReplace.replaceWith(template);
-  //   }
-  // </script>`);
-  // });
+//   //   [RESOLVED] bar
+//   // </template>
+//   // <script>
+//   //   {
+//   //     let toReplace = document.querySelector('pending-task[data-id="0"]');
+//   //     const template = document.querySelector('template[data-id="0"]').content.cloneNode(true);
+//   //     toReplace.replaceWith(template);
+//   //   }
+//   // </script>`);
+//   // });
 
   it('kitchensink', async () => {
     function Html({children}) {

@@ -2,6 +2,17 @@ import { HtmlResponse, Router } from '../router.js';
 import { html } from '../html.js';
 import { HtmlPage } from './pages/HtmlPage.js';
 import { Await, when } from '../await.js';
+import { litRenderer } from '../ssr/lit.js';
+import { LitElement, html as litHtml, css } from 'lit';
+
+class MyEl extends LitElement {
+  static styles = css`:host { color: red }`
+  render() {
+    return litHtml`<h1>hello</h1>`;
+  }
+}
+customElements.define('my-el', MyEl);
+
 
 async function* generator() {
   // let i = 0;
@@ -29,6 +40,7 @@ function Baz({children}) {
 }
 
 const router = new Router({
+  customElementRenderer: litRenderer,
   fallback: () => html`not found!`,
   plugins: [
     {
@@ -42,51 +54,41 @@ const router = new Router({
     {
       path: '/a',
       render: () => html`a`,
-      plugins: [
-        {
-          name: 'a-plugin',
-          async beforeResponse({request, query, params}) {
-            console.log(2, 'a-plugin', request, query, params);
-            return new HtmlResponse(html`hi`);
-            // return Response.redirect('/b');
-          }
-        }
-      ]
+      // plugins: [
+      //   {
+      //     name: 'a-plugin',
+      //     async beforeResponse({request, query, params}) {
+      //       console.log(2, 'a-plugin', request, query, params);
+      //       return new HtmlResponse(html`hi`);
+      //       // return Response.redirect('/b');
+      //     }
+      //   }
+      // ]
     },
     {
       path: '/b',
       render: () => html`b`,
-      plugins: [
-        {
-          name: 'b-plugin',
-          async beforeResponse({request, route}) {
-            console.log(3, 'b-plugin', request, route);
-          }
-        }
-      ]
+      // plugins: [
+      //   {
+      //     name: 'b-plugin',
+      //     async beforeResponse({request, route}) {
+      //       console.log(3, 'b-plugin', request, route);
+      //     }
+      //   }
+      // ]
     },
+    // {
+    //   path: '/',
+    //   render: () => html`hi<my-el foo=1>baz</my-el>`,
+    // },
     {
       path: '/',
       render: ({params, query, request}) => html`
         <${HtmlPage}>
           <h1>home</h1>
+            <my-el></my-el>
           <ul>
-            <li>
-              <${Await} promise=${() => new Promise(r => setTimeout(() => r({foo:'foo'}), 3000))}>
-                ${({pending, success}, data) => html`
-                  ${when(pending, () => html`[PENDING] slow`)}
-                  ${when(success, () => html`[RESOLVED] slow ${data.foo}`)}
-                `}
-              <//>
-            </li> 
-            <li>
-              <${Await} promise=${() => new Promise(r => setTimeout(() => r({bar:'bar'}), 1500))}>
-                ${({pending, success}, data) => html`
-                  ${when(pending, () => html`[PENDING] fast`)}
-                  ${when(success, () => html`[RESOLVED] fast ${data.bar}`)}
-                `}
-              <//>
-            </li>
+            
           </ul>
           <h2>footer</h2>
         <//>

@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "esbuild ./demo/sw.js --bundle --outfile=./demo/bundled-sw.js --watch --format=iife --servedir=demo",
     "start": "node --watch dev.js",
-    "test": "node --watch tests/tests.js"
+    "test": "node --watch --test tests/tests.js"
   },
   "exports": {
     ".": "./index.js",
@@ -16,7 +16,8 @@
     "./render.js": "./render.js",
     "./router.js": "./router.js",
     "./strategies.js": "./strategies.js",
-    "./slot.js": "./slot.js"
+    "./slot.js": "./slot.js",
+    "./ssr/*.js": "./ssr/*.js"
   },
   "files": [
     "html.js",
@@ -26,12 +27,15 @@
     "await.js",
     "strategies.js",
     "index.js",
-    "slot.js"
+    "slot.js",
+    "ssr/*"
   ],
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "esbuild": "^0.19.0"
+    "@lit-labs/ssr": "^3.2.2",
+    "esbuild": "^0.19.0",
+    "lit": "^3.1.2"
   }
 }

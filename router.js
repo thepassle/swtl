@@ -1,13 +1,16 @@
 import { render } from './render.js';
+import { defaultRenderer } from './ssr/default.js';
 
 export class Router {
   constructor({ 
     routes, 
     fallback, 
     plugins = [], 
-    baseHref = '' 
+    baseHref = '',
+    customElementRenderer = defaultRenderer
   }) {
     this.plugins = plugins;
+    this.customElementRenderer = customElementRenderer;
     this.fallback = {
       render: fallback,
       params: {}
@@ -66,19 +69,26 @@ export class Router {
         }
       }
 
-      return new HtmlResponse(await route({url, query, params, request}), matchedRoute?.options ?? {});
+      return new HtmlResponse(
+        await route({url, query, params, request}), 
+        matchedRoute?.options ?? {},
+        {
+          renderer: this.customElementRenderer
+        }
+      );
     }
   }
 }
 
 export class HtmlResponse {
-  constructor(template, options = {}) {
-    const iterator = render(template);
+  constructor(template, routeOptions = {}, renderOptions = {}) {
+    const iterator = render(template, renderOptions.renderer);
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async pull(controller) {
         try {
           const { value, done } = await iterator.next();
+
           if (done) {
             controller.close();
           } else {
@@ -96,9 +106,9 @@ export class HtmlResponse {
       headers: { 
         'Content-Type': 'text/html', 
         'Transfer-Encoding': 'chunked', 
-        ...(options?.headers ?? {})
+        ...(routeOptions?.headers ?? {})
       },
-      ...options
+      ...routeOptions
     });
   }
 }

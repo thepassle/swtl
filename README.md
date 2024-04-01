@@ -250,7 +250,7 @@ const object = {
   qux: 'world',
 }
 
-html`<${MyComponent} title="hello" foo=${1} ...bar=${object} bool/>`;
+html`<${MyComponent} title="hello" foo=${1} ...${object} bool/>`;
 
 /** 
  * Note that quotes are optional when using expressions, the following is also fine:

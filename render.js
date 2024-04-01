@@ -1,5 +1,6 @@
 import { html } from './html.js';
-import { SLOT_SYMBOL, AWAIT_SYMBOL, COMPONENT_SYMBOL } from "./symbol.js";
+import { defaultRenderer } from './ssr/default.js';
+import { SLOT_SYMBOL, AWAIT_SYMBOL, COMPONENT_SYMBOL, CUSTOM_ELEMENT_SYMBOL } from "./symbol.js";
 
 function hasGetReader(obj) {
   return typeof obj.getReader === "function";
@@ -32,20 +33,21 @@ async function* handleIterator(iterable) {
   }
 }
 
-export async function* handle(chunk, promises) {
+export async function* handle(chunk, promises, customElementRenderer) {
+  // debugger;
   if (typeof chunk === "string") {
     yield chunk;
   } else if (typeof chunk === "function") {
-    yield* handle(chunk(), promises);
+    yield* handle(chunk(), promises, customElementRenderer);
   } else if (Array.isArray(chunk)) {
-    yield* _render(chunk, promises);
+    yield* _render(chunk, promises, customElementRenderer);
   } else if (typeof chunk?.then === "function") {
     const v = await chunk;
-    yield* handle(v, promises);
+    yield* handle(v, promises, customElementRenderer);
   } else if (chunk instanceof Response && chunk.body) {
     yield* handleIterator(chunk.body);
   } else if (chunk?.[Symbol.asyncIterator] || chunk?.[Symbol.iterator]) {
-    yield* _render(chunk, promises);
+    yield* _render(chunk, promises, customElementRenderer);
   } else if (chunk?.fn?.kind === AWAIT_SYMBOL) {
     const { promise, template } = chunk.fn({
       ...chunk.properties.reduce((acc, prop) => ({...acc, [prop.name]: prop.value}), {}),
@@ -66,7 +68,9 @@ export async function* handle(chunk, promises) {
           }
         })
     );
-    yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({pending: true, error: false, success: false}, null, null)}</awaiting-promise>`, promises);
+    yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({pending: true, error: false, success: false}, null, null)}</awaiting-promise>`, promises, customElementRenderer);
+  } else if (chunk?.kind === CUSTOM_ELEMENT_SYMBOL) {
+    yield* customElementRenderer(chunk);
   } else if (chunk?.kind === COMPONENT_SYMBOL) {
     const children = [];
     const slots = {};
@@ -85,7 +89,8 @@ export async function* handle(chunk, promises) {
         children,
         slots
       }),
-      promises
+      promises,
+      customElementRenderer
     );
   } else {
     const stringified = chunk?.toString();
@@ -97,16 +102,16 @@ export async function* handle(chunk, promises) {
   }
 }
 
-async function* _render(template, promises) {
+async function* _render(template, promises, customElementRenderer) {
   for await (const chunk of template) {
-    yield* handle(chunk, promises);
+    yield* handle(chunk, promises, customElementRenderer);
   }
 }
 
-export async function* render(template) {
+export async function* render(template, customElementRenderer = defaultRenderer) {
   let promises = [];
 
-  yield* _render(template, promises);
+  yield* _render(template, promises, customElementRenderer);
 
   promises = promises.map(promise => {
     let p = promise.then(val => {
@@ -133,10 +138,10 @@ export async function* render(template) {
   }
 }
 
-export async function renderToString(renderResult) {
+export async function renderToString(renderResult, customElementRenderer = defaultRenderer) {
   let result = "";
 
-  for await (const chunk of render(renderResult)) {
+  for await (const chunk of render(renderResult, customElementRenderer)) {
     result += chunk;
   }
 
