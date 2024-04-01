@@ -49,7 +49,6 @@ export function* html(statics, ...dynamics) {
      */
     for (let j = 0; j < statics[i].length; j++) {
       let c = statics[i][j];
-      // debugger;
       if (MODE === TEXT || MODE === TAG_OPEN) {
         if (
           c === "<" &&
@@ -377,7 +376,6 @@ export function* html(statics, ...dynamics) {
               } else if (statics[i][j + tag.length + 1] === '>') {
                 COMPONENT_MODE = CHILDREN;
               } else if (statics[i][j + tag.length + 1] === '/') {
-                debugger;
                 throw new Error(noSelfClosing(tag));
               }
 

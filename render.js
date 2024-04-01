@@ -34,7 +34,6 @@ async function* handleIterator(iterable) {
 }
 
 export async function* handle(chunk, promises, customElementRenderer) {
-  // debugger;
   if (typeof chunk === "string") {
     yield chunk;
   } else if (typeof chunk === "function") {
