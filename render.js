@@ -68,7 +68,11 @@ export async function* handle(chunk, promises, customElementRenderer) {
           }
         })
     );
-    yield* _render(html`<awaiting-promise style="display: contents;" data-id="${id.toString()}">${template({pending: true, error: false, success: false}, null, null)}</awaiting-promise>`, promises, customElementRenderer);
+    yield* _render([
+      `<awaiting-promise style="display: contents;" data-id="${id.toString()}">`,
+      template({pending: true, error: false, success: false}, null, null),
+      `</awaiting-promise>`
+    ], promises, customElementRenderer);
   } else if (chunk?.kind === CUSTOM_ELEMENT_SYMBOL) {
     yield* customElementRenderer(chunk);
   } else if (chunk?.kind === COMPONENT_SYMBOL) {
