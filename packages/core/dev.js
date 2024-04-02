@@ -3,7 +3,7 @@ import { render, renderToString, handle } from './render.js';
 import { Await, when } from './await.js';
 import { Slot } from './slot.js';
 import { LitElement, css, html as litHtml } from 'lit';
-import { litRenderer } from './ssr/lit.js';
+import { litRenderer } from '@swtl/lit';
 import { defaultRenderer } from './ssr/default.js';
 import { COMPONENT_SYMBOL } from './symbol.js';
 import { HtmlPage } from './demo/pages/HtmlPage.js';

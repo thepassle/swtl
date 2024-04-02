@@ -1,7 +1,7 @@
-import './lit-dom-shim.js';
+import './dom-shim.js';
 import { LitElementRenderer } from "@lit-labs/ssr/lib/lit-element-renderer.js";
 import { getElementRenderer } from "@lit-labs/ssr/lib/element-renderer.js";
-import { render as swtlRender } from '../render.js';
+import { render as swtlRender } from 'swtl/render.js';
 
 async function* render({ tag, children, attributes }) {
   const renderInfo = {
