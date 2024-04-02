@@ -2,7 +2,7 @@ import { HtmlResponse, Router } from "../router.js";
 import { html } from "../html.js";
 import { HtmlPage } from "./pages/HtmlPage.js";
 import { Await, when } from "../await.js";
-import { litRenderer } from "../ssr/lit.js";
+import { litRenderer } from "@swtl/lit";
 import { LitElement, html as litHtml, css } from "lit";
 
 class MyEl extends LitElement {
