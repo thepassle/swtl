@@ -1,5 +1,2 @@
 node_modules/
-TODO.md
-blog.md
-*.jpeg
-package-lock.json
+.DS_Store

@@ -1,11 +1,7 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import { html } from '../html.js';
-import { renderToString } from '../render.js';
-import { Await, when } from '../await.js';
-import { Slot } from '../slot.js';
-import { COMPONENT_SYMBOL } from '../symbol.js';
-import { Router } from '../router.js';
+import { COMPONENT_SYMBOL, CUSTOM_ELEMENT_SYMBOL } from '../symbol.js';
 
 function Foo() {}
 function Bar() {
@@ -28,6 +24,144 @@ function unwrap(generator) {
 }
 
 describe('parsing', () => {
+  describe('custom elements', () => {
+    it('basic', () => {
+      const result = unwrap(html`<my-el></my-el>`);
+      assert.equal(result[0].tag, 'my-el');
+      assert.equal(result[0].kind, CUSTOM_ELEMENT_SYMBOL);
+      assert.deepEqual(result[0].attributes, []);
+      assert.deepEqual(result[0].children, []);
+    });
+
+    it('no self-closing', () => {
+      try {
+        unwrap(html`<my-el/>`);
+      } catch(e) {
+        assert.equal(e.message, 'Custom elements cannot be self-closing: "my-el"');
+      }
+    });
+
+    it('siblings custom elements', () => {
+      const result = unwrap(html`<foo-el></foo-el><bar-el></bar-el>`);
+      assert.equal(result[0].tag, 'foo-el');
+      assert.equal(result[1].tag, 'bar-el');
+    });
+
+    it('siblings swtl component', () => {
+      const result = unwrap(html`<foo-el></foo-el><${Foo}/>`);
+      assert.equal(result[0].tag, 'foo-el');
+      assert.equal(result[0].kind, CUSTOM_ELEMENT_SYMBOL);
+      assert.equal(result[1].kind, COMPONENT_SYMBOL);
+    });
+
+    it('siblings text', () => {
+      const result = unwrap(html`hello<foo-el></foo-el>world`);
+      assert.equal(result[0], 'hello');
+      assert.equal(result[1].tag, 'foo-el');
+      assert.equal(result[2], 'world');
+    });
+
+    describe('attributes', () => {
+      it('no quote', () => {
+        const result = unwrap(html`<my-el foo=b></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: 'b'}]);
+      });
+  
+      it('single quote', () => {
+        const result = unwrap(html`<my-el foo='b'></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: 'b'}]);
+      });
+  
+      it('double quote', () => {
+        const result = unwrap(html`<my-el foo="b"></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: 'b'}]);
+      });
+  
+      it('multiple char attribute', () => {
+        const result = unwrap(html`<my-el foo="bar"></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: 'bar'}]);
+      });
+
+      it('dynamic val', () => {
+        const result = unwrap(html`<my-el foo="${1}"></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: '1'}]);
+      });
+
+      it('boolean', () => {
+        const result = unwrap(html`<my-el foo></my-el>`);
+        assert.deepEqual(result[0].attributes, [{name: 'foo', value: true}]);
+      });
+
+      it('multiple attributes', () => {
+        const result = unwrap(html`<my-el foo="bar" bar="baz"></my-el>`);
+        assert.deepEqual(result[0].attributes, [
+          {name: 'foo', value: 'bar'},
+          {name: 'bar', value: 'baz'},
+        ]);
+      });
+
+      it('spread', () => {
+        const s = { a: 1, b: 2 };
+        const result = unwrap(html`<my-el ...${s}></my-el>`);
+        assert.deepEqual(result[0].attributes, [
+          {name: 'a', value: 1},
+          {name: 'b', value: 2},
+        ]);
+      });
+
+      it('no self-closing', () => {
+        try {
+          unwrap(html`<my-el foo=bar/>`);
+        } catch(e) {
+          assert.equal(e.message, 'Custom elements cannot be self-closing: "my-el"');
+        }
+      });
+    });
+
+    describe('children', () => {
+      it('basic', () => {
+        const result = unwrap(html`<my-el>a</my-el>`);
+        assert.deepEqual(result[0].children, ['a']);
+      });
+
+      it('dynamic', () => {
+        const result = unwrap(html`<my-el>a ${1} b</my-el>`);
+        assert.deepEqual(result[0].children, ['a ', 1, ' b']);
+      });
+      
+      it('nested swtl component', () => {
+        const result = unwrap(html`<my-el><${Foo}/></my-el>`);
+        assert.equal(result[0].kind, CUSTOM_ELEMENT_SYMBOL);
+        assert.equal(result[0].children[0].kind, COMPONENT_SYMBOL);
+      });
+
+      it('double nested swtl component', () => {
+        const result = unwrap(html`<my-el><${Foo}><${Bar}><//><//></my-el>`);
+        assert.equal(result[0].kind, CUSTOM_ELEMENT_SYMBOL);
+        assert.equal(result[0].children[0].kind, COMPONENT_SYMBOL);
+        assert.equal(result[0].children[0].children[0].kind, COMPONENT_SYMBOL);
+      });
+      
+      it('nested custom element', () => {
+        const result = unwrap(html`<foo-el><bar-el></bar-el></foo-el>`);
+        assert.equal(result[0].kind, CUSTOM_ELEMENT_SYMBOL);
+        assert.equal(result[0].children[0].kind, CUSTOM_ELEMENT_SYMBOL);
+      });
+
+      it('custom element child of swtl component', () => {
+        const result = unwrap(html`<${Foo}><my-el></my-el><//>`);
+        assert.equal(result[0].kind, COMPONENT_SYMBOL);
+        assert.equal(result[0].children[0].kind, CUSTOM_ELEMENT_SYMBOL);
+      });
+
+      it('custom element child of swtl component with sibling', () => {
+        const result = unwrap(html`<${Foo}><h1>a</h1><my-el></my-el><//>`);
+        assert.equal(result[0].children[0], '<h1>a</h1>');
+        assert.equal(result[0].children[1].kind, CUSTOM_ELEMENT_SYMBOL);
+      });
+    });
+  });
+
   it('handles html', () => {
     const result = unwrap(html`<h1>hello</h1>`);
     assert.deepStrictEqual(result[0], `<h1>hello</h1>`);
@@ -297,212 +431,5 @@ describe('children', () => {
           kind: COMPONENT_SYMBOL
         },
       ]);
-  });
-});
-
-describe('renderToString', () => {
-  function Foo() {
-    return html`<h1>foo</h1>`
-  }
-
-  function Bar({children}) {
-    return html`<h1>${children}</h1>`
-  }
-
-  function Baz({children}) {
-    return html`<h2>${children}</h2>`
-  }
-
-  it('basic', async () => {
-    const result = await renderToString(html`<h1>hello</h1>`);
-    assert.equal(result, '<h1>hello</h1>');
-  });
-
-  it('expressions', async () => {
-    const result = await renderToString(html`<h1>hello ${1}</h1>`);
-    assert.equal(result, '<h1>hello 1</h1>');
-  });
-
-  it('components', async () => {
-    const result = await renderToString(html`<${Foo}/>`);
-    assert.equal(result, '<h1>foo</h1>');
-  });
-
-  it('components children', async () => {
-    const result = await renderToString(html`<${Bar}>bar<//>`);
-    assert.equal(result, '<h1>bar</h1>');
-  });
-
-  it('falsey values', async () => {
-    const result = await renderToString(html`<h1>${0}${false}</h1>`);
-    assert.equal(result, '<h1>0false</h1>');
-  });
-
-  it('objects', async () => {
-    const result = await renderToString(html`<h1>${{a: 2}}</h1>`);
-    assert.equal(result, '<h1>{"a":2}</h1>');
-  });
-  
-  it('components nested children', async () => {
-    const result = await renderToString(html`<${Bar}><${Baz}>baz<//><//>`);
-    assert.equal(result, '<h1><h2>baz</h2></h1>');
-  });
-
-  it('generator', async () => {
-    function* generator() {
-      yield* html`<li>1</li>`;
-      yield* html`<li>2</li>`;
-    }
-
-    const result = await renderToString(html`<ul>${generator()}</ul>`);
-    assert.equal(result, '<ul><li>1</li><li>2</li></ul>');
-  });
-
-  it('stream', async () => {
-    const stream = new ReadableStream({
-      start(controller) {
-        ['a', 'b', 'c'].forEach(s => controller.enqueue(s));
-        controller.close();
-      }
-    });
-    const result = await renderToString(html`<ul>${stream}</ul>`);
-    assert.equal(result, '<ul>abc</ul>');
-  });
-
-  it('response', async () => {
-    const response = new Response('<h1>hello</h1>');
-    const result = await renderToString(html`<main>${response}</main>`);
-    assert.equal(result, '<main><h1>hello</h1></main>');
-  });
-
-  it('Component returning response', async () => {
-    function Foo() {
-      return new Response('hi');
-    }
-    const result = await renderToString(html`<main><${Foo}/></main>`);
-    assert.equal(result, '<main>hi</main>');
-  });
-
-  // it('Async', async () => {
-  //   const result = await renderToString(html`<${Async} task=${() => new Promise(r => setTimeout(() => r({foo: 'bar'}), 100))}>
-  //     ${({state, data}) => html`
-  //       ${when(state === 'pending', () => html`[PENDING]`)}
-  //       ${when(state === 'success', () => html`[RESOLVED] ${data.foo}`)}
-  //     `}
-  //   <//>`);
-  //   console.log(result);
-  //   assert.equal(result, `<pending-task style="display: contents;" data-id="0">
-  //   [PENDING]
-    
-  // </pending-task>
-  // <template data-id="0">
-    
-  //   [RESOLVED] bar
-  // </template>
-  // <script>
-  //   {
-  //     let toReplace = document.querySelector('pending-task[data-id="0"]');
-  //     const template = document.querySelector('template[data-id="0"]').content.cloneNode(true);
-  //     toReplace.replaceWith(template);
-  //   }
-  // </script>`);
-  // });
-
-  it('kitchensink', async () => {
-    function Html({children}) {
-      return html`<html><body>${children}</body></html>`;
-    }
-
-    function Foo({bar, baz}) {
-      return html`<h2>foo ${bar} ${baz}</h2>`
-    }
-
-    const result = await renderToString(html`<${Html}><h1>welcome ${1}</h1><${Foo} bar=${1} baz="2"/><footer>copyright</footer><//>`)
-    assert.equal(result, '<html><body><h1>welcome 1</h1><h2>foo 1 2</h2><footer>copyright</footer></body></html>');
-  }); 
-});
-
-describe('slots', () => {
-  function Default({slots}) {
-    return html`<h1>${slots.default}</h1>`;
-  }
-
-  function OnlyNamed({slots}) {
-    return html`<h1>${slots?.foo}</h1>`;
-  }
-
-  function DefaultAndNamed({slots}) {
-    return html`<h1>${slots?.default}</h1><h2>${slots?.foo}</h2>`;
-  }
-
-  function MultipleNamed({slots}) {
-    return html`<h1>${slots?.foo}</h1><h2>${slots?.bar}</h2>`;
-  }
-
-  it('default', async () => {
-    const result = await renderToString(html`<${Default}><${Slot}>hi<//><//>`);
-    assert.equal(result, '<h1>hi</h1>');  
-  });
-
-  it('default and named', async () => {
-    const result = await renderToString(html`<${DefaultAndNamed}><${Slot}>hi<//><${Slot} name="foo">foo<//><//>`);
-    assert.equal(result, '<h1>hi</h1><h2>foo</h2>');  
-  });
-
-  it('multiple named', async () => {
-    const result = await renderToString(html`<${MultipleNamed}><${Slot} name="foo">foo<//><${Slot} name="bar">bar<//><//>`);
-    assert.equal(result, '<h1>foo</h1><h2>bar</h2>');  
-  });
-  
-  it('only named', async () => {
-    const result = await renderToString(html`<${OnlyNamed}><${Slot} name="foo">foo<//><//>`);
-    assert.equal(result, '<h1>foo</h1>');  
-  });
-});
-
-
-globalThis.URLPattern = class URLPattern {
-  exec() {
-    return true;
-  }
-}
-
-describe('Router', () => {
-  it('creates a default response', async () => {
-    const router = new Router({
-      routes: [
-      {
-        path: '/foo',
-        render: () => html`foo`
-      }
-    ]});
-
-    const response = await router.handleRequest({url: 'https://example.com/foo'});
-    const result = await response.text();
-    assert.equal(result, 'foo');
-    
-    assert.equal(response.headers.get('Content-Type'), 'text/html');
-    assert.equal(response.headers.get('Transfer-Encoding'), 'chunked');
-  });
-
-  it('can override defaults via `options`', async () => {
-    const router = new Router({
-      routes: [
-      {
-        path: '/foo',
-        render: () => html`foo`,
-        options: {
-          status: 300,
-          headers: {
-            'Content-Type': 'foo'
-          }
-        }
-      }
-    ]});
-
-    const response = await router.handleRequest({url: 'https://example.com/foo'});
-    
-    assert.equal(response.status, 300);
-    assert.equal(response.headers.get('Content-Type'), 'foo');
   });
 });

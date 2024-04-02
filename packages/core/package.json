@@ -1,0 +1,43 @@
+{
+  "name": "swtl",
+  "version": "0.3.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "esbuild ./demo/sw.js --bundle --outfile=./demo/bundled-sw.js --watch --format=iife --servedir=demo",
+    "start": "node --watch dev.js",
+    "test": "node --test test/*.test.js",
+    "test:watch": "node --watch --test tests/tests.js"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./html.js": "./html.js",
+    "./await.js": "./await.js",
+    "./render.js": "./render.js",
+    "./router.js": "./router.js",
+    "./strategies.js": "./strategies.js",
+    "./slot.js": "./slot.js",
+    "./ssr/*.js": "./ssr/*.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "html.js",
+    "render.js",
+    "router.js",
+    "symbol.js",
+    "await.js",
+    "strategies.js",
+    "index.js",
+    "slot.js",
+    "ssr/*",
+    "README.md"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@swtl/lit": "^0.1.2"
+  },
+  "dependencies": {}
+}

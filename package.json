@@ -1,37 +1,21 @@
 {
-  "name": "swtl",
-  "version": "0.2.1",
-  "description": "",
-  "main": "index.js",
+  "name": "@swtl/root",
+  "private": true,
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thepassle/swtl.git"
+  },
   "scripts": {
-    "dev": "esbuild ./demo/sw.js --bundle --outfile=./demo/bundled-sw.js --watch --format=iife --servedir=demo",
-    "start": "node --watch dev.js",
-    "test": "node --watch tests/tests.js"
+    "test": "npm run test --workspaces"
   },
-  "exports": {
-    ".": "./index.js",
-    "./html.js": "./html.js",
-    "./await.js": "./await.js",
-    "./render.js": "./render.js",
-    "./router.js": "./router.js",
-    "./strategies.js": "./strategies.js",
-    "./slot.js": "./slot.js"
-  },
-  "files": [
-    "html.js",
-    "render.js",
-    "router.js",
-    "symbol.js",
-    "await.js",
-    "strategies.js",
-    "index.js",
-    "slot.js"
-  ],
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {},
   "devDependencies": {
-    "esbuild": "^0.19.0"
-  }
+    "esbuild": "^0.19.0",
+    "lit": "^3.1.2"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }
