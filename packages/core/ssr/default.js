@@ -1,13 +1,13 @@
 import { render as swtlRender } from '../render.js';
 import { DEFAULT_RENDERER_SYMBOL } from '../symbol.js';
 
-async function* render({ tag, children, attributes }) {
+async function* render({ tag, children, attributes, renderers }) {
   const attrs = attributes.reduce((acc, { name, value }, index) => {
     const attribute = typeof value === 'boolean' && value ? name : `${name}="${value}"`;
     return index < attributes.length - 1 ? `${acc}${attribute} ` : `${acc}${attribute}`;
   }, '');
   yield attrs.length ? `<${tag} ${attrs}>` : `<${tag}>`;
-  yield* swtlRender(children);
+  yield* swtlRender(children, renderers);
   yield `</${tag}>`;
 }
 

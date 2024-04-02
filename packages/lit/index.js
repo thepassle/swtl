@@ -3,7 +3,12 @@ import { LitElementRenderer } from "@lit-labs/ssr/lib/lit-element-renderer.js";
 import { getElementRenderer } from "@lit-labs/ssr/lib/element-renderer.js";
 import { render as swtlRender } from 'swtl/render.js';
 
-async function* render({ tag, children, attributes }) {
+/**
+ * @TODO
+ * I have to pass any renderers down to the litRenderer.render (as well as the default renderer)
+ * swtlRender(children, renderers)
+ */
+async function* render({ tag, children, attributes, renderers }) {
   const renderInfo = {
     elementRenderers: [LitElementRenderer],
     customElementInstanceStack: [],
@@ -24,7 +29,7 @@ async function* render({ tag, children, attributes }) {
   yield `<template shadowroot="open" shadowrootmode="open">`;
   yield* renderer.renderShadow(renderInfo);
   yield `</template>`;
-  yield* swtlRender(children);
+  yield* swtlRender(children, renderers);
   yield `</${tag}>`;
 }
 

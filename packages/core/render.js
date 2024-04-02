@@ -75,7 +75,7 @@ export async function* handle(chunk, promises, customElementRenderers) {
   } else if (chunk?.kind === CUSTOM_ELEMENT_SYMBOL) {
     const renderer = customElementRenderers.find(r => r.match(chunk))
     if (renderer) {
-      yield* renderer.render(chunk);
+      yield* renderer.render({...chunk, renderers: customElementRenderers});
     }
   } else if (chunk?.kind === COMPONENT_SYMBOL) {
     const children = [];
