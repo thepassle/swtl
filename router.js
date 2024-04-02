@@ -1,5 +1,4 @@
 import { render } from './render.js';
-import { defaultRenderer } from './ssr/default.js';
 
 export class Router {
   constructor({ 
@@ -7,10 +6,11 @@ export class Router {
     fallback, 
     plugins = [], 
     baseHref = '',
-    customElementRenderer = defaultRenderer
+    customElementRenderers = []
   }) {
     this.plugins = plugins;
-    this.customElementRenderer = customElementRenderer;
+    this.customElementRenderers = customElementRenderers;
+    
     this.fallback = {
       render: fallback,
       params: {}
@@ -73,7 +73,7 @@ export class Router {
         await route({url, query, params, request}), 
         matchedRoute?.options ?? {},
         {
-          renderer: this.customElementRenderer
+          renderers: this.customElementRenderers
         }
       );
     }
@@ -82,7 +82,7 @@ export class Router {
 
 export class HtmlResponse {
   constructor(template, routeOptions = {}, renderOptions = {}) {
-    const iterator = render(template, renderOptions.renderer);
+    const iterator = render(template, renderOptions.renderers);
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async pull(controller) {

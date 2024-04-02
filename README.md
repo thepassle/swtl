@@ -2,7 +2,9 @@
 
 > Check out the [swtl-starter](https://github.com/thepassle/swtl-starter) app
 
-A Service Worker Templating Language (`swtl`) for component-like templating in service workers. Streams templates to the browser as they're being parsed, and handles rendering iterables/Responses in templates by default.
+A Service Worker Templating Language (`swtl`) for component-like templating in service workers. Streams templates to the browser as they're being parsed, and handles rendering iterables/Responses in templates by default. Also supports SSR/SWSRing custom elements, with a pluggable custom element renderer system.
+
+Runs in Service Workers, but can also be used in Node, or other server-side JS environments.
 
 ```bash
 npm i swtl
@@ -401,6 +403,91 @@ import { renderToString } from 'swtl';
 
 const result = await renderToString(html`<h1>${1}</h1>`);
 ```
+
+## SSR/SWSR
+
+Swtl also supports SSR (Server Side Rendering) or SWSR (Service Worker Side Rendering) of custom elements via a pluggable custom element renderer system. Here's an example: 
+
+```js
+import { litRenderer } from '@swtl/lit';
+
+const router = new Router({
+  customElementRenderers = [litRenderer]
+  // etc
+})
+```
+
+> Note that `customElementRenderers` are order-sensitive; `customElementRenderers` will do a `match` check to see if the current renderer should or should not render the given custom element. If this `match` check returns false, it will defer to the next renderer (if any) or to the default renderer, which just outputs the custom element as-is, and essentially _doesn't_ SSR/SWSR it. You don't have to provide the default renderer manually; it gets added for you.
+
+You can then use (in this case) LitElements in your SWTL template, e.g.:
+
+```js
+html`<my-lit-el .foo=${{a: 'b'}} bar="2"></my-lit-el>`
+```
+
+And the LitElement will get rendered via `@lit-labs/ssr` with Declarative Shadow Dom. If you want to hydrate your component, you'll have to explicitly load the client-side code for your component:
+
+```js
+html`
+  <my-lit-el .foo=${{a: 'b'}} bar="2"></my-lit-el>
+  <script type="module" src="./my-lit-el.js"/>
+`
+```
+
+## Creating Custom Element Renderers
+
+You can also create _custom_ custom element renderers (no, that's not a typo). The way this works is as follows:
+
+Swtl's `html` tag will parse the template for SWTL Components, but also for custom elements. Given the following template:
+
+```js
+html`<my-el foo=1 disabled>foo</my-el>`
+```
+
+Internally, the following object will be created:
+```js
+{
+  tag: 'my-el',
+  children: ['foo'],
+  attributes: [
+    {
+      name: 'foo',
+      value: '1'
+    },
+    {
+      name: 'disabled',
+      value: true
+    }
+  ]
+}
+```
+
+Custom element renderers get passed this custom element object. A custom element renderer is an object with two methods on it: `match` and `render`. Here's an example:
+
+```js
+async function* render({tag, children, attributes}) {
+  yield `<${tag}>`
+  yield 'etc'
+  // etc
+}
+
+export const fooRenderer = {
+  name: 'foo',
+  /**
+   * Return a boolean to indicate if your custom renderer 
+   * should render this custom element or not
+   */
+  match({tag, children, attributes}) {
+    const ctor = customElements.get(tag);
+    return ctor.isFooElement;
+  },
+  render
+}
+```
+
+The `match` function indicates whether or not this renderer should render the custom element it gets passed. If this returns true, the `render` function will be called for this custom element. If false, it will defer to the `defaultRenderer`, which just outputs the custom element as it was authored and does not SSR/SWSR it.
+
+The `render` function should be a generator function that yields your SSR/SWSR'd custom element.
 
 ## Acknowledgements
 

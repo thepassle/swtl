@@ -43,7 +43,7 @@ function Baz({ children }) {
 }
 
 const router = new Router({
-  customElementRenderer: litRenderer,
+  customElementRenderers: [litRenderer],
   fallback: () => html`not found!`,
   plugins: [
     {

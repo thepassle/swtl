@@ -1,9 +1,9 @@
 import './lit-dom-shim.js';
 import { LitElementRenderer } from "@lit-labs/ssr/lib/lit-element-renderer.js";
 import { getElementRenderer } from "@lit-labs/ssr/lib/element-renderer.js";
-import { render } from '../render.js';
+import { render as swtlRender } from '../render.js';
 
-export async function* litRenderer({ tag, children, attributes }) {
+async function* render({ tag, children, attributes }) {
   const renderInfo = {
     elementRenderers: [LitElementRenderer],
     customElementInstanceStack: [],
@@ -12,7 +12,11 @@ export async function* litRenderer({ tag, children, attributes }) {
   };
   const renderer = getElementRenderer(renderInfo, tag);
   attributes.forEach(({ name, value }) => {
-    renderer.attributeChangedCallback(name, null, value);
+    if (name.startsWith('.')) {
+      renderer.setProperty(name.slice(1), value);
+    } else {
+      renderer.attributeChangedCallback(name, null, value);
+    }
   });
   renderer.connectedCallback();
 
@@ -20,6 +24,16 @@ export async function* litRenderer({ tag, children, attributes }) {
   yield `<template shadowroot="open" shadowrootmode="open">`;
   yield* renderer.renderShadow(renderInfo);
   yield `</template>`;
-  yield* render(children);
+  yield* swtlRender(children);
   yield `</${tag}>`;
+}
+
+export const litRenderer = {
+  name: 'lit',
+  match({tag}) {
+    const ctor = customElements.get(tag);
+    if (!ctor) return false;
+    return LitElementRenderer.matchesClass(ctor);
+  },
+  render
 }
