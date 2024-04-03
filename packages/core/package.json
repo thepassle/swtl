@@ -1,6 +1,6 @@
 {
   "name": "swtl",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -8,7 +8,7 @@
     "dev": "esbuild ./demo/sw.js --bundle --outfile=./demo/bundled-sw.js --watch --format=iife --servedir=demo",
     "start": "node --watch dev.js",
     "test": "node --test test/*.test.js",
-    "test:watch": "node --watch --test tests/tests.js",
+    "test:watch": "node --watch --test test/*.test.js",
     "lint:types": "tsc",
     "lint:types:watch": "tsc --watch"
   },
@@ -63,7 +63,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@swtl/lit": "^0.1.4"
+    "@swtl/lit": "^0.1.5"
   },
   "dependencies": {}
 }

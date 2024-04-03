@@ -109,7 +109,11 @@ async function* handle(chunk, promises, customElementRenderers) {
   } else if (chunk?.kind === CUSTOM_ELEMENT_SYMBOL) {
     const renderer = customElementRenderers.find(r => r.match(chunk))
     if (renderer) {
-      yield* renderer.render({...chunk, renderers: customElementRenderers});
+      /**
+       * @param {AsyncIterable<unknown> | Iterable<unknown>} children 
+       */
+      const renderChildren = (children) => _render(children, promises, customElementRenderers);
+      yield* renderer.render(chunk, renderChildren);
     }
   } else if (chunk?.kind === COMPONENT_SYMBOL) {
     const children = [];
