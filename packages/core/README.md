@@ -465,10 +465,13 @@ Internally, the following object will be created:
 Custom element renderers get passed this custom element object. A custom element renderer is an object with two methods on it: `match` and `render`. Here's an example:
 
 ```js
-async function* render({tag, children, attributes}) {
-  yield `<${tag}>`
-  yield 'etc'
-  // etc
+async function* render({tag, children, attributes}, renderChildren) {
+  yield `<${tag}>`;
+  yield `<template shadowroot="open" shadowrootmode="open">`;
+  yield `render shadow DOM`
+  yield `</template>`;
+  yield* renderChildren(children);
+  yield `</${tag}>`;
 }
 
 export const fooRenderer = {
