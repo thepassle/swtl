@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node --test test/*.test.js",
+    "test:watch": "node --watch --test test/*.test.js",
     "lint:types": "tsc",
     "lint:types:watch": "tsc --watch"
   },
