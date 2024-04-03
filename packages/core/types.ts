@@ -33,7 +33,9 @@ export interface CustomElementRenderer {
     children: Children, 
     attributes: Attribute[], 
     renderers: CustomElementRenderer[] 
-  }) => AsyncGenerator<string>;
+  },
+  renderChildren: (children: Children) => AsyncGenerator<string>
+  ) => AsyncGenerator<string>;
 }
 
 export type RouteResult = void | Promise<void> | Response | Promise<Response> | HtmlResult | Promise<HtmlResult>;

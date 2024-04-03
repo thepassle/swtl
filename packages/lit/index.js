@@ -1,8 +1,6 @@
 import './dom-shim.js';
 import { LitElementRenderer } from "@lit-labs/ssr/lib/lit-element-renderer.js";
 import { getElementRenderer } from "@lit-labs/ssr/lib/element-renderer.js";
-import { render as swtlRender } from 'swtl/render.js';
-
 
 /**
  * @typedef {import('swtl').CustomElementRenderer} CustomElementRenderer
@@ -14,13 +12,13 @@ import { render as swtlRender } from 'swtl/render.js';
 
 /**
  * @param {{
-*  tag: string,
-*  children: Children,
-*  attributes: Attribute[],
-*  renderers: CustomElementRenderer[]
-* }} args
-*/
-async function* render({ tag, children, attributes, renderers }) {
+ *  tag: string,
+ *  children: Children,
+ *  attributes: Attribute[],
+ * }} args
+ * @param {(children: Children) => AsyncGenerator<string, void, unknown>} renderChildren
+ */
+async function* render({ tag, children, attributes }, renderChildren) {
   const renderInfo = {
     elementRenderers: [LitElementRenderer],
     customElementInstanceStack: [],
@@ -42,7 +40,7 @@ async function* render({ tag, children, attributes, renderers }) {
   // @ts-expect-error
   yield* renderer.renderShadow(renderInfo);
   yield `</template>`;
-  yield* swtlRender(children, renderers);
+  yield* renderChildren(children);
   yield `</${tag}>`;
 }
 

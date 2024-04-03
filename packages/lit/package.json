@@ -1,6 +1,6 @@
 {
   "name": "@swtl/lit",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "",
   "type": "module",
   "main": "index.js",
@@ -15,8 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@lit-labs/ssr": "^3.2.2",
-    "@lit-labs/ssr-dom-shim": "^1.2.0",
-    "swtl": "^0.3.2"
+    "@lit-labs/ssr-dom-shim": "^1.2.0"
   },
   "devDependencies": {}
 }
