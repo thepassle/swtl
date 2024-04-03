@@ -58,7 +58,6 @@ export class Router {
 
   /**
    * @param {Request} request 
-   * @returns {Promise<Response | HtmlResponse | undefined>}
    */
   async handleRequest(request) {
     const url = new URL(request.url);
@@ -97,8 +96,13 @@ export class Router {
         }
       }
 
-      return createResponse(
-        await route({url, query, params, request}), 
+      const response = await route({url, query, params, request});
+      if (response instanceof Response) {
+        return response;
+      }
+
+      return new HtmlResponse(
+        /** @type {HtmlResult} */ (response), 
         matchedRoute?.options ?? {},
         {
           renderers: this.customElementRenderers
@@ -109,12 +113,11 @@ export class Router {
 }
 
 /**
- * @param {*} template 
- * @param {*} routeOptions 
- * @param {*} renderOptions 
- * @returns 
+ * @param {HtmlResult} template 
+ * @param {{renderers?: CustomElementRenderer[]}} renderOptions 
+ * @returns {ReadableStream}
  */
-function createResponse(template, routeOptions, renderOptions) {
+function createStream(template, renderOptions) {
   const iterator = render(template, renderOptions.renderers);
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -134,24 +137,27 @@ function createResponse(template, routeOptions, renderOptions) {
     }
   });
 
-  return new Response(stream, { 
-    status: 200,
-    headers: { 
-      'Content-Type': 'text/html', 
-      'Transfer-Encoding': 'chunked', 
-      ...(routeOptions?.headers ?? {})
-    },
-    ...routeOptions
-  });
+  return stream;
 }
 
-export class HtmlResponse {
+export class HtmlResponse extends Response {
   /**
-   * @param {unknown} template 
-   * @param {*} routeOptions 
-   * @param {*} renderOptions 
+   * @param {HtmlResult} template 
+   * @param {Partial<RequestInit>} routeOptions 
+   * @param {{renderers?: CustomElementRenderer[]}} renderOptions 
    */
   constructor(template, routeOptions = {}, renderOptions = {}) {
-    return createResponse(template, routeOptions, renderOptions);
+    super(
+      createStream(template, renderOptions),
+      { 
+        status: 200,
+        headers: { 
+          'Content-Type': 'text/html', 
+          'Transfer-Encoding': 'chunked', 
+          ...(routeOptions?.headers ?? {})
+        },
+        ...routeOptions
+      }
+    );
   }
 }
