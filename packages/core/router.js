@@ -14,7 +14,7 @@ export class Router {
   /**
    * @param {{
    *  routes: Route[],
-   *  fallback: (args: RouteArgs) => RouteResult,
+   *  fallback?: (args: RouteArgs) => RouteResult,
    *  plugins?: Plugin[],
    *  baseHref?: string,
    *  customElementRenderers?: CustomElementRenderer[]
@@ -58,6 +58,7 @@ export class Router {
 
   /**
    * @param {Request} request 
+   * @returns {Promise<Response | HtmlResponse | undefined>}
    */
   async handleRequest(request) {
     const url = new URL(request.url);
@@ -96,7 +97,7 @@ export class Router {
         }
       }
 
-      return new HtmlResponse(
+      return createResponse(
         await route({url, query, params, request}), 
         matchedRoute?.options ?? {},
         {
@@ -107,43 +108,50 @@ export class Router {
   }
 }
 
+/**
+ * @param {*} template 
+ * @param {*} routeOptions 
+ * @param {*} renderOptions 
+ * @returns 
+ */
+function createResponse(template, routeOptions, renderOptions) {
+  const iterator = render(template, renderOptions.renderers);
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async pull(controller) {
+      try {
+        const { value, done } = await iterator.next();
+
+        if (done) {
+          controller.close();
+        } else {
+          controller.enqueue(encoder.encode(value));
+        }
+      } catch(e) {
+        console.error(/** @type {Error} */ (e).stack);
+        throw e;
+      }
+    }
+  });
+
+  return new Response(stream, { 
+    status: 200,
+    headers: { 
+      'Content-Type': 'text/html', 
+      'Transfer-Encoding': 'chunked', 
+      ...(routeOptions?.headers ?? {})
+    },
+    ...routeOptions
+  });
+}
+
 export class HtmlResponse {
   /**
-   * 
    * @param {unknown} template 
    * @param {*} routeOptions 
    * @param {*} renderOptions 
-   * @returns 
    */
   constructor(template, routeOptions = {}, renderOptions = {}) {
-    // @ts-expect-error
-    const iterator = render(template, renderOptions.renderers);
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      async pull(controller) {
-        try {
-          const { value, done } = await iterator.next();
-
-          if (done) {
-            controller.close();
-          } else {
-            controller.enqueue(encoder.encode(value));
-          }
-        } catch(e) {
-          console.error(/** @type {Error} */ (e).stack);
-          throw e;
-        }
-      }
-    });
-
-    return new Response(stream, { 
-      status: 200,
-      headers: { 
-        'Content-Type': 'text/html', 
-        'Transfer-Encoding': 'chunked', 
-        ...(routeOptions?.headers ?? {})
-      },
-      ...routeOptions
-    });
+    return createResponse(template, routeOptions, renderOptions);
   }
 }
