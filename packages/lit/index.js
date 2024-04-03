@@ -3,11 +3,23 @@ import { LitElementRenderer } from "@lit-labs/ssr/lib/lit-element-renderer.js";
 import { getElementRenderer } from "@lit-labs/ssr/lib/element-renderer.js";
 import { render as swtlRender } from 'swtl/render.js';
 
+
 /**
- * @TODO
- * I have to pass any renderers down to the litRenderer.render (as well as the default renderer)
- * swtlRender(children, renderers)
+ * @typedef {import('swtl').CustomElementRenderer} CustomElementRenderer
+ * @typedef {import('swtl').HtmlResult} HtmlResult
+ * @typedef {import('swtl').HtmlValue} HtmlValue
+ * @typedef {import('swtl').Children} Children
+ * @typedef {import('swtl').Attribute} Attribute
  */
+
+/**
+ * @param {{
+*  tag: string,
+*  children: Children,
+*  attributes: Attribute[],
+*  renderers: CustomElementRenderer[]
+* }} args
+*/
 async function* render({ tag, children, attributes, renderers }) {
   const renderInfo = {
     elementRenderers: [LitElementRenderer],
@@ -20,19 +32,21 @@ async function* render({ tag, children, attributes, renderers }) {
     if (name.startsWith('.')) {
       renderer.setProperty(name.slice(1), value);
     } else {
-      renderer.attributeChangedCallback(name, null, value);
+      renderer.attributeChangedCallback(name, null, /** @type {string} */ (value));
     }
   });
   renderer.connectedCallback();
 
   yield `<${tag}>`;
   yield `<template shadowroot="open" shadowrootmode="open">`;
+  // @ts-expect-error
   yield* renderer.renderShadow(renderInfo);
   yield `</template>`;
   yield* swtlRender(children, renderers);
   yield `</${tag}>`;
 }
 
+/** @type {CustomElementRenderer} */
 export const litRenderer = {
   name: 'lit',
   match({tag}) {

@@ -2,10 +2,32 @@ import { html } from './html.js';
 import { defaultRenderer } from './ssr/default.js';
 import { SLOT_SYMBOL, AWAIT_SYMBOL, COMPONENT_SYMBOL, CUSTOM_ELEMENT_SYMBOL, DEFAULT_RENDERER_SYMBOL } from "./symbol.js";
 
+/**
+ * @typedef {import('./types.js').CustomElementRenderer} CustomElementRenderer
+ * @typedef {import('./types.js').HtmlResult} HtmlResult
+ * @typedef {import('./types.js').HtmlValue} HtmlValue
+ * @typedef {Promise<{
+ *  id: number, 
+ *  template: (params: {
+ *   pending: boolean,
+ *   error: boolean,
+ *   success: boolean
+ *  }, 
+ *  data: unknown, 
+ *  error: typeof Error) => HtmlResult
+ * }>} OOOPromise
+ */
+
+/**
+ * @param {ReadableStream} obj 
+ */
 function hasGetReader(obj) {
   return typeof obj.getReader === "function";
 }
 
+/**
+ * @param {ReadableStream} stream 
+ */
 export async function* streamAsyncIterator(stream) {
   const reader = stream.getReader();
   const decoder = new TextDecoder("utf-8");
@@ -21,6 +43,9 @@ export async function* streamAsyncIterator(stream) {
   }
 }
 
+/**
+ * @param {any} iterable 
+ */
 async function* handleIterator(iterable) {
   if (hasGetReader(iterable)) {
     for await (const chunk of streamAsyncIterator(iterable)) {
@@ -33,7 +58,13 @@ async function* handleIterator(iterable) {
   }
 }
 
-export async function* handle(chunk, promises, customElementRenderers) {
+/**
+ * @param {any} chunk 
+ * @param {OOOPromise[]} promises 
+ * @param {CustomElementRenderer[]} customElementRenderers 
+ * @returns {AsyncGenerator<string, void, unknown>}
+ */
+async function* handle(chunk, promises, customElementRenderers) {
   if (typeof chunk === "string") {
     yield chunk;
   } else if (typeof chunk === "function") {
@@ -49,16 +80,19 @@ export async function* handle(chunk, promises, customElementRenderers) {
     yield* _render(chunk, promises, customElementRenderers);
   } else if (chunk?.fn?.kind === AWAIT_SYMBOL) {
     const { promise, template } = chunk.fn({
+      // @ts-ignore
       ...chunk.properties.reduce((acc, prop) => ({...acc, [prop.name]: prop.value}), {}),
       children: chunk.children,
     });
     const id = promises.length;
     promises.push(
       promise()
+      // @ts-ignore
         .then(data => ({
           id,
           template: template({pending: false, error: false, success: true}, data, null) 
         }))
+        // @ts-ignore
         .catch(error => {
           console.error(error.stack);
           return {
@@ -79,9 +113,13 @@ export async function* handle(chunk, promises, customElementRenderers) {
     }
   } else if (chunk?.kind === COMPONENT_SYMBOL) {
     const children = [];
+    /**
+     * @type {Record<string, HtmlResult[]>}
+     */
     const slots = {};
     for (const child of chunk.children) {
       if (child?.fn?.kind === SLOT_SYMBOL) {
+        // @ts-ignore
         const name = child.properties.find(prop => prop.name === 'name')?.value || 'default';
         slots[name] = child.children;
       } else {
@@ -91,6 +129,7 @@ export async function* handle(chunk, promises, customElementRenderers) {
 
     yield* handle(
       await chunk.fn({
+        // @ts-ignore
         ...chunk.properties.reduce((acc, prop) => ({...acc, [prop.name]: prop.value}), {}),
         children,
         slots
@@ -108,13 +147,28 @@ export async function* handle(chunk, promises, customElementRenderers) {
   }
 }
 
+/**
+ * 
+ * @param {AsyncIterable<HtmlValue> | Iterable<HtmlValue>} template 
+ * @param {Array<OOOPromise>} promises 
+ * @param {CustomElementRenderer[]} customElementRenderers 
+ * @returns {AsyncGenerator<string, void, unknown>}
+ */
 async function* _render(template, promises, customElementRenderers) {
   for await (const chunk of template) {
     yield* handle(chunk, promises, customElementRenderers);
   }
 }
 
+/**
+ * @param {AsyncIterable<HtmlValue> | Iterable<HtmlValue>} template 
+ * @param {CustomElementRenderer[]} customElementRenderers 
+ * @returns {AsyncGenerator<string, void, unknown>}
+ */
 export async function* render(template, customElementRenderers = []) {
+  /**
+   * @type {Array<OOOPromise>}
+   */
   let promises = [];
   if (!customElementRenderers.find(({name}) => name === DEFAULT_RENDERER_SYMBOL)) {
     customElementRenderers.push(defaultRenderer);
@@ -147,14 +201,19 @@ export async function* render(template, customElementRenderers = []) {
   }
 }
 
-export async function renderToString(renderResult, customElementRenderers = []) {
+/**
+ * @param {HtmlResult} htmlResult 
+ * @param {CustomElementRenderer[]} customElementRenderers 
+ * @returns {Promise<string>}
+ */
+export async function renderToString(htmlResult, customElementRenderers = []) {
   if (!customElementRenderers.find(({name}) => name === DEFAULT_RENDERER_SYMBOL)) {
     customElementRenderers.push(defaultRenderer);
   }
 
   let result = "";
 
-  for await (const chunk of render(renderResult, customElementRenderers)) {
+  for await (const chunk of render(htmlResult, customElementRenderers)) {
     result += chunk;
   }
 

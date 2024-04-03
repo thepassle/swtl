@@ -1,6 +1,25 @@
 import { render } from './render.js';
 
+/**
+ * @typedef {import('./types.js').CustomElementRenderer} CustomElementRenderer
+ * @typedef {import('./types.js').Route} Route
+ * @typedef {import('./types.js').MatchedRoute} MatchedRoute
+ * @typedef {import('./types.js').RouteArgs} RouteArgs
+ * @typedef {import('./types.js').RouteResult} RouteResult
+ * @typedef {import('./types.js').Plugin} Plugin
+ * @typedef {import('./types.js').HtmlResult} HtmlResult
+ */
+
 export class Router {
+  /**
+   * @param {{
+   *  routes: Route[],
+   *  fallback: (args: RouteArgs) => RouteResult,
+   *  plugins?: Plugin[],
+   *  baseHref?: string,
+   *  customElementRenderers?: CustomElementRenderer[]
+   * }} params
+   */
   constructor({ 
     routes, 
     fallback, 
@@ -17,6 +36,7 @@ export class Router {
     };
     this.routes = routes.map(route => ({
       ...route,
+      // @ts-expect-error
       urlPattern: new URLPattern({
         pathname: `${baseHref}${route.path}`,
         search: '*',
@@ -25,6 +45,10 @@ export class Router {
     }));
   }
 
+  /**
+   * @param {MatchedRoute} route 
+   * @returns {Plugin[]}
+   */
   _getPlugins(route) {
     return [
       ...(this.plugins ?? []), 
@@ -32,6 +56,9 @@ export class Router {
     ]
   }
 
+  /**
+   * @param {Request} request 
+   */
   async handleRequest(request) {
     const url = new URL(request.url);
     let matchedRoute;
@@ -39,7 +66,7 @@ export class Router {
     for (const route of this.routes) {
 
       const match = route.urlPattern.exec(url);
-      if(match) {
+      if (match) {
         matchedRoute = {
           options: route.options,
           render: route.render,
@@ -56,15 +83,15 @@ export class Router {
       const query = Object.fromEntries(new URLSearchParams(url.search));
       const params = matchedRoute?.params;
 
-      const plugins = this._getPlugins(matchedRoute);
-      for (const plugin of plugins) {
+      const plugins = this._getPlugins(/** @type {MatchedRoute} */ (matchedRoute));
+      for (const {name, beforeResponse} of plugins) {
         try {
-          const result = await plugin?.beforeResponse({url, query, params, request});
+          const result = await beforeResponse?.({url, query, params, request});
           if (result) {
             return result;
           }
         } catch(e) {
-          console.log(`Plugin "${plugin.name}" error on beforeResponse hook`, e);
+          console.log(`Plugin "${name}" error on beforeResponse hook`, e);
           throw e;
         }
       }
@@ -81,7 +108,15 @@ export class Router {
 }
 
 export class HtmlResponse {
+  /**
+   * 
+   * @param {unknown} template 
+   * @param {*} routeOptions 
+   * @param {*} renderOptions 
+   * @returns 
+   */
   constructor(template, routeOptions = {}, renderOptions = {}) {
+    // @ts-expect-error
     const iterator = render(template, renderOptions.renderers);
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
@@ -95,7 +130,7 @@ export class HtmlResponse {
             controller.enqueue(encoder.encode(value));
           }
         } catch(e) {
-          console.error(e.stack);
+          console.error(/** @type {Error} */ (e).stack);
           throw e;
         }
       }

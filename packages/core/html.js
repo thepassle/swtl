@@ -1,5 +1,11 @@
 import { COMPONENT_SYMBOL, CUSTOM_ELEMENT_SYMBOL } from './symbol.js';
 
+/**
+ * @typedef {import('./types.js').Component} Component
+ * @typedef {import('./types.js').CustomElement} CustomElement
+ * @typedef {import('./types.js').HtmlResult} HtmlResult
+ */
+
 const TEXT = 'TEXT';
 const COMPONENT = 'COMPONENT';
 const TAG_OPEN = 'TAG_OPEN';
@@ -12,13 +18,31 @@ const SET_PROP = 'SET_PROP';
 const PROP_VAL = 'PROP_VAL';
 
 const customElementTagRegex = /^([a-z0-9]+-[a-z0-9-]*)/;
+/** @param {string} t */
 const noSelfClosing = t => `Custom elements cannot be self-closing: "${t}"`;
 
+/**
+ * @param {TemplateStringsArray} statics 
+ * @param  {...unknown} dynamics 
+ * @returns {HtmlResult}
+ */
 export function* html(statics, ...dynamics) {
+  /**
+   * @type {TEXT | COMPONENT | TAG_OPEN}
+   */
   let MODE = TEXT;
+  /**
+   * @type {NONE | PROP | CHILDREN}
+   */
   let COMPONENT_MODE = NONE;
+  /**
+   * @type {SET_PROP | PROP_VAL | NONE}
+   */
   let PROP_MODE = NONE;
 
+  /**
+   * @type {Array<Component | CustomElement>}
+   */
   const componentStack = [];
 
   /**
@@ -30,6 +54,9 @@ export function* html(statics, ...dynamics) {
   for (let i = 0; i < statics.length; i++) {
     let result = "";
     let tag = "";
+    /**
+     * @type {Component}
+     */
     const component = {
       kind: COMPONENT_SYMBOL,
       slots: {},
@@ -59,7 +86,7 @@ export function* html(statics, ...dynamics) {
           !statics[i][j + 1] && typeof dynamics[i] === "function"
         ) {
           MODE = COMPONENT;
-          component.fn = dynamics[i];
+          component.fn = /** @type {Component["fn"]} */ (dynamics[i]);
           componentStack.push(component);
         } else {
           result += c;
@@ -126,6 +153,7 @@ export function* html(statics, ...dynamics) {
         if (COMPONENT_MODE === PROP) {
           const component = componentStack[componentStack.length - 1];
           const attrOrProp = component?.kind === COMPONENT_SYMBOL ? 'properties' : 'attributes';
+          /** @ts-expect-error */
           const property = component?.[`${attrOrProp}`][component[`${attrOrProp}`].length - 1];
           if (PROP_MODE === SET_PROP) {
             let property = "";
@@ -155,7 +183,7 @@ export function* html(statics, ...dynamics) {
             } else if (statics[i][j] === "/" && COMPONENT_MODE === PROP) {
               COMPONENT_MODE = NONE;
               PROP_MODE = NONE;
-              const component = componentStack.pop();
+              const component = /** @type {Component} */ (componentStack.pop());
               if (!componentStack.length) {
                 result = '';
                 yield component;
@@ -170,8 +198,10 @@ export function* html(statics, ...dynamics) {
             }
 
             if (property === '...') {
+              /** @ts-expect-error */
               component[`${attrOrProp}`].push(...Object.entries(dynamics[i]).map(([name,value])=> ({name, value})));
             } else if (property) {
+              /** @ts-expect-error */
               component[`${attrOrProp}`].push({name: property, value: true});
             }
           } else if (PROP_MODE === PROP_VAL) {
@@ -228,8 +258,8 @@ export function* html(statics, ...dynamics) {
                  * Yield if we finished the component
                  * Swtl Component only, custom elements can't be self-closing
                  */
-              } else if (statics[i][j] === '/' && componentStack.at(-1).kind === COMPONENT_SYMBOL) {
-                const component = componentStack.pop();
+              } else if (statics[i][j] === '/' && componentStack.at(-1)?.kind === COMPONENT_SYMBOL) {
+                const component = /** @type {Component} */ (componentStack.pop());
                 if (!componentStack.length) {
                   PROP_MODE = NONE;
                   COMPONENT_MODE = NONE;
@@ -266,8 +296,8 @@ export function* html(statics, ...dynamics) {
                * Yield if we finished the component
                * Swtl Component only, custom elements can't be self-closing
                */
-              if (statics[i][j] === '/' && componentStack.at(-1).kind === COMPONENT_SYMBOL) {
-                const component = componentStack.pop();
+              if (statics[i][j] === '/' && componentStack.at(-1)?.kind === COMPONENT_SYMBOL) {
+                const component = /** @type {Component} */ (componentStack.pop());
                 if (!componentStack.length) {
                   yield component;
                 }
@@ -275,8 +305,9 @@ export function* html(statics, ...dynamics) {
                  * @example <my-el bar=hi/>
                  *                       ^
                  */
-              } else if (statics[i][j] === '/' && componentStack.at(-1).kind === CUSTOM_ELEMENT_SYMBOL) {
-                throw new Error(noSelfClosing(componentStack.at(-1).tag));
+              } else if (statics[i][j] === '/' && componentStack.at(-1)?.kind === CUSTOM_ELEMENT_SYMBOL) {
+                // @ts-expect-error we already know its a custom element because of the symbol
+                throw new Error(noSelfClosing(componentStack.at(-1)?.tag));
               } else if (statics[i][j] === '>') {
                 result = "";
                 COMPONENT_MODE = CHILDREN;
@@ -302,7 +333,7 @@ export function* html(statics, ...dynamics) {
              * If there are no components on the stack, this is a top level
              * component, and we can yield
              */
-            const component = componentStack.pop();
+            const component = /** @type {Component} */ (componentStack.pop());
             if (!componentStack.length) {
               MODE = TEXT;
               COMPONENT_MODE = NONE;
@@ -318,7 +349,7 @@ export function* html(statics, ...dynamics) {
             }
             COMPONENT_MODE = PROP;
             PROP_MODE = SET_PROP;
-            component.fn = dynamics[i];
+            component.fn = /** @type {Component["fn"]} */ (dynamics[i]);
             componentStack.push(component);
           } else if (!statics[i][j+1]) {
             /**
@@ -346,7 +377,7 @@ export function* html(statics, ...dynamics) {
                * If there are no components on the stack, this is a top level
                * component, and we can yield
                */
-              const component = componentStack.pop();
+              const component = /** @type {Component | CustomElement} */ (componentStack.pop());
               if (!componentStack.length) {
                 MODE = TEXT;
                 COMPONENT_MODE = NONE;
@@ -356,7 +387,9 @@ export function* html(statics, ...dynamics) {
                  * Otherwise we need to add the component to the parent's children
                  */
                 const parentComponent = componentStack[componentStack.length - 1];
-                parentComponent.children.push(component);                
+                if (component) {
+                  parentComponent.children.push(component);                
+                }
               }
             }
           } else if (statics[i][j] === '<') {
@@ -399,14 +432,14 @@ export function* html(statics, ...dynamics) {
         } else if (c === " ") {
           COMPONENT_MODE = PROP;
           PROP_MODE = SET_PROP;
-        } else if (c === "/" && statics[i][j + 1] === ">" && componentStack.at(-1).kind === COMPONENT_SYMBOL) {
+        } else if (c === "/" && statics[i][j + 1] === ">" && componentStack.at(-1)?.kind === COMPONENT_SYMBOL) {
           MODE = TEXT;
           COMPONENT_MODE = NONE;
           /**
            * If there are no components on the stack, this is a top level
            * component, and we can yield
            */
-          const component = componentStack.pop();
+          const component = /** @type {Component} */ (componentStack.pop());
           if (!componentStack.length) {
             result = '';
             yield component;

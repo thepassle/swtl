@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": [
+    "index.js",
+    "await.js",
+    "html.js",
+    "router.js",
+    "render.js",
+    "symbol.js",
+    "slot.js",
+    "strategies.js",
+    "ssr/*.js",
+    "types.ts"
+  ],  
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./dist-types"
+  }
+}

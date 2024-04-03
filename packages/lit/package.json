@@ -1,11 +1,13 @@
 {
   "name": "@swtl/lit",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "",
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "lint:types": "tsc",
+    "lint:types:watch": "tsc --watch"
   },
   "keywords": [],
   "author": "",
@@ -13,7 +15,7 @@
   "dependencies": {
     "@lit-labs/ssr": "^3.2.2",
     "@lit-labs/ssr-dom-shim": "^1.2.0",
-    "swtl": "^0.3.0"
+    "swtl": "^0.3.2"
   },
   "devDependencies": {}
 }

@@ -1,6 +1,6 @@
 {
   "name": "swtl",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -8,17 +8,43 @@
     "dev": "esbuild ./demo/sw.js --bundle --outfile=./demo/bundled-sw.js --watch --format=iife --servedir=demo",
     "start": "node --watch dev.js",
     "test": "node --test test/*.test.js",
-    "test:watch": "node --watch --test tests/tests.js"
+    "test:watch": "node --watch --test tests/tests.js",
+    "lint:types": "tsc",
+    "lint:types:watch": "tsc --watch"
   },
   "exports": {
-    ".": "./index.js",
-    "./html.js": "./html.js",
-    "./await.js": "./await.js",
-    "./render.js": "./render.js",
-    "./router.js": "./router.js",
-    "./strategies.js": "./strategies.js",
-    "./slot.js": "./slot.js",
-    "./ssr/*.js": "./ssr/*.js",
+    ".": { 
+      "types": "./dist-types/index.d.ts",
+      "default": "./index.js" 
+    },
+    "./html.js": { 
+      "types": "./dist-types/html.d.ts",
+      "default": "./html.js" 
+    },
+    "./await.js": { 
+      "types": "./dist-types/await.d.ts",
+      "default": "./await.js" 
+    },
+    "./render.js": { 
+      "types": "./dist-types/render.d.ts",
+      "default": "./render.js" 
+    },
+    "./router.js": { 
+      "types": "./dist-types/router.d.ts",
+      "default": "./router.js" 
+    },
+    "./strategies.js": { 
+      "types": "./dist-types/strategies.d.ts",
+      "default": "./strategies.js" 
+    },
+    "./slot.js": { 
+      "types": "./dist-types/slot.d.ts",
+      "default": "./slot.js" 
+    },
+    "./ssr/*.js": { 
+      "types": "./dist-types/ssr/*.d.ts",
+      "default": "./ssr/*.js" 
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -37,7 +63,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@swtl/lit": "^0.1.3"
+    "@swtl/lit": "^0.1.4"
   },
   "dependencies": {}
 }
