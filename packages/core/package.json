@@ -1,6 +1,6 @@
 {
   "name": "swtl",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -57,6 +57,7 @@
     "index.js",
     "slot.js",
     "ssr/*",
+    "dist-types/*",
     "README.md"
   ],
   "keywords": [],

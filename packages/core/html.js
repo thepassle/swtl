@@ -27,22 +27,14 @@ const noSelfClosing = t => `Custom elements cannot be self-closing: "${t}"`;
  * @returns {HtmlResult}
  */
 export function* html(statics, ...dynamics) {
-  /**
-   * @type {TEXT | COMPONENT | TAG_OPEN}
-   */
+  /** @type {TEXT | COMPONENT | TAG_OPEN} */
   let MODE = TEXT;
-  /**
-   * @type {NONE | PROP | CHILDREN}
-   */
+  /** @type {NONE | PROP | CHILDREN} */
   let COMPONENT_MODE = NONE;
-  /**
-   * @type {SET_PROP | PROP_VAL | NONE}
-   */
+  /** @type {SET_PROP | PROP_VAL | NONE} */
   let PROP_MODE = NONE;
 
-  /**
-   * @type {Array<Component | CustomElement>}
-   */
+  /** @type {Array<Component | CustomElement>} */
   const componentStack = [];
 
   /**
