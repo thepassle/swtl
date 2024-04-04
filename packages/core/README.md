@@ -361,8 +361,9 @@ const template = html`
 ```
 
 If you're using SWTL in a more SPA-like PWA app, you can also use the following strategies:
+
 ```js
-import { networkFirst, networkOnly, cacheFirst, cacheOnly } from 'swtl';
+import { networkFirst, networkOnly, cacheFirst, cacheOnly, staleWhileRevalidate } from 'swtl';
 
 import { Router } from 'swtl';
 

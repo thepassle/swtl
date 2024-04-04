@@ -29,3 +29,16 @@ export const cacheOnly = (request) => caches.match(request);
 
 /** @param {Request} request */
 export const networkOnly = (request) => fetch(request);
+
+/** @param {Request} request */
+export const staleWhileRevalidate = (request) =>
+  caches.open("swtl-cache").then((cache) =>
+    cache.match(request).then(
+      (response) =>
+        response ||
+        fetch(request).then((networkResponse) => {
+          cache.put(request, networkResponse.clone());
+          return networkResponse;
+        })
+    )
+  );
