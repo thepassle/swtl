@@ -7,21 +7,25 @@
  */
 
 /** @param {StrategyParams} params */
-export function NetworkFirst({file, children}) {
-  return fetch(file).catch(() => caches.match(file).then(r => r || children));
-}
+export const NetworkFirst = ({file, children}) => fetch(file).catch(() => caches.match(file).then(r => r || children));
 
 /** @param {StrategyParams} params */
-export function CacheFirst({file, children}) {
-  return caches.match(file).then(r => r || fetch(file).catch(() => children));
-}
+export const CacheFirst = ({file, children}) => caches.match(file).then(r => r || fetch(file).catch(() => children));
 
 /** @param {StrategyParams} params */
-export function CacheOnly({file, children}) {
-  return caches.match(file).then(r => r || children);
-}
+export const CacheOnly = ({file, children}) => caches.match(file).then(r => r || children);
 
 /** @param {StrategyParams} params */
-export function NetworkOnly({file, children}) {
-  return fetch(file).catch(() => children);
-}
+export const NetworkOnly = ({file, children}) => fetch(file).catch(() => children);
+
+/** @param {Request} request */
+export const networkFirst = (request) => fetch(request).catch(() => caches.match(request));
+
+/** @param {Request} request */
+export const cacheFirst = (request) => caches.match(request).then(r => r || fetch(request));
+
+/** @param {Request} request */
+export const cacheOnly = (request) => caches.match(request);
+
+/** @param {Request} request */
+export const networkOnly = (request) => fetch(request);

@@ -1,5 +1,5 @@
 import { html } from './html.js';
-import { render, renderToString, handle } from './render.js';
+import { render, renderToString } from './render.js';
 import { Await, when } from './await.js';
 import { Slot } from './slot.js';
 import { LitElement, css, html as litHtml } from 'lit';
@@ -91,16 +91,22 @@ function HtmlPage2({children}) {
   return children;
 }
 
-const fixture = html`
-  <${HtmlPage}>
-    <h1>home</h1>
-      <my-el></my-el>
-    <ul>
-      
-    </ul>
-    <h2>footer</h2>
-  <//>
-`
+
+// class MyEl extends LitElement {
+//   static styles = css`:host { color: red }`
+//   static properties = { disabled: { type: Boolean } };
+//   render() {
+//     return litHtml`<h1>hello ${this.disabled ? 'foo' : 'bar'}</h1>`;
+//   }
+// }
+// customElements.define('my-el', MyEl);
+
+// html`
+//   <${HtmlPage}>
+//     <h1>home</h1>
+//     <my-el></my-el>
+//   <//>
+// `
 
 const r = unwrap(fixture);
 console.log(1, r);
