@@ -54,14 +54,14 @@ export interface Plugin {
 
 export interface Route {
   path: string,
-  render: (params: RouteArgs) => RouteResult,
+  response: (params: RouteArgs) => RouteResult,
   plugins?: Plugin[],
   options?: RequestInit
 }
 
 export interface MatchedRoute {
   params: Record<string, string>;
-  render: (params: RouteArgs) => RouteResult;
+  response: (params: RouteArgs) => RouteResult;
   plugins?: Plugin[];
   options?: RequestInit;
 }

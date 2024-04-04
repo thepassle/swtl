@@ -31,7 +31,7 @@ export class Router {
     this.customElementRenderers = customElementRenderers;
     
     this.fallback = {
-      render: fallback,
+      response: fallback,
       params: {}
     };
     this.routes = routes.map(route => ({
@@ -69,7 +69,7 @@ export class Router {
       if (match) {
         matchedRoute = {
           options: route.options,
-          render: route.render,
+          response: route.response,
           params: match?.pathname?.groups ?? {},
           plugins: route.plugins,
         };
@@ -77,7 +77,7 @@ export class Router {
       }
     }
 
-    const route = matchedRoute?.render ?? this?.fallback?.render;
+    const route = matchedRoute?.response ?? this?.fallback?.response;
     if (route) {
       const url = new URL(request.url);
       const query = Object.fromEntries(new URLSearchParams(url.search));

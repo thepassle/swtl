@@ -15,7 +15,7 @@ describe('Router', () => {
       routes: [
       {
         path: '/foo',
-        render: () => html`foo`
+        response: () => html`foo`
       }
     ]});
 
@@ -32,7 +32,7 @@ describe('Router', () => {
       routes: [
       {
         path: '/foo',
-        render: () => html`foo`,
+        response: () => html`foo`,
         options: {
           status: 300,
           headers: {

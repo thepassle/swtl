@@ -56,7 +56,7 @@ const router = new Router({
   routes: [
     {
       path: "/a",
-      render: () => html`a`,
+      response: () => html`a`,
       // plugins: [
       //   {
       //     name: 'a-plugin',
@@ -70,7 +70,7 @@ const router = new Router({
     },
     {
       path: "/b",
-      render: () => html`b`,
+      response: () => html`b`,
       // plugins: [
       //   {
       //     name: 'b-plugin',
@@ -82,11 +82,11 @@ const router = new Router({
     },
     // {
     //   path: '/',
-    //   render: () => html`hi<my-el foo=1>baz</my-el>`,
+    //   response: () => html`hi<my-el foo=1>baz</my-el>`,
     // },
     {
       path: "/",
-      render: ({ params, query, request }) => html`
+      response: ({ params, query, request }) => html`
         <${HtmlPage}>
           <h1>home</h1>
           <my-el></my-el>
@@ -114,19 +114,19 @@ const router = new Router({
     },
     {
       path: "/foo",
-      render: ({ params, query, request }) =>
+      response: ({ params, query, request }) =>
         html`<${HtmlPage}><h1>Foo</h1><//>`,
     },
     // {
     //   path: '/bar',
-    //   render: ({params, query, request}) => html`<${HtmlPage}>
+    //   response: ({params, query, request}) => html`<${HtmlPage}>
     //     <${Baz}>abc<//>
     //     efg
     //   <//>`
     // },
     // {
     //   path: '/baz',
-    //   render: ({params, query, request}) => html`
+    //   response: ({params, query, request}) => html`
     //     <${HtmlPage}>
     //       <${Baz}>abc<//>
     //       <h3>hello</h3>

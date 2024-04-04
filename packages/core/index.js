@@ -8,6 +8,10 @@ export {
   CacheFirst,
   CacheOnly,
   NetworkOnly,
+  networkFirst,
+  cacheFirst,
+  cacheOnly,
+  networkOnly
 } from './strategies.js';
 
 /**

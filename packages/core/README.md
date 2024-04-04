@@ -28,7 +28,7 @@ const router = new Router({
   routes: [
     {
       path: '/',
-      render: ({url, params, query, request}) => html`
+      response: ({url, params, query, request}) => html`
         <${HtmlPage} title="Home">
           <h1>Home</h1>
           <nav>
@@ -56,7 +56,7 @@ self.addEventListener('fetch', (event) => {
 
 ## Router
 
-Uses [URLPattern](https://developer.mozilla.org/en-US/docs/Web/API/URLPattern) internally for matching the `paths`. The `render` callback gets passed the native [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) object, as well as any route params or query params.
+Uses [URLPattern](https://developer.mozilla.org/en-US/docs/Web/API/URLPattern) internally for matching the `paths`. The `response` callback gets passed the native [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) object, as well as any route params or query params.
 
 ```js
 import { html, Router } from 'swtl';
@@ -65,19 +65,19 @@ const router = new Router({
   routes: [
     {
       path: '/',
-      render: () => html`<h1>Home</h1>`
+      response: () => html`<h1>Home</h1>`
     },
     {
       path: '/:foo',
-      render: ({params}) => html`<h1>${params.foo}</h1>`
+      response: ({params}) => html`<h1>${params.foo}</h1>`
     },
     {
       path: '/:foo/:bar',
-      render: ({params}) => html`<h1>${params.foo}/${params.bar}</h1>`
+      response: ({params}) => html`<h1>${params.foo}/${params.bar}</h1>`
     },
     {
       path: '/:foo/:bar',
-      render: ({url, params, query, request}) => html`<h1>${params.foo}/${params.bar}</h1>`
+      response: ({url, params, query, request}) => html`<h1>${params.foo}/${params.bar}</h1>`
     },
   ]
 });
@@ -100,12 +100,12 @@ const router = new Router({
     {
       // The url will be: https://my-app.com/foo/bar/
       path: '',
-      render: () => html`<${Home}/>`
+      response: () => html`<${Home}/>`
     },
     {
       // The url will be: https://my-app.com/foo/bar/users/1
       path: 'users/:id',
-      render: ({params}) => html`<${User} id=${params.id}/>`
+      response: ({params}) => html`<${User} id=${params.id}/>`
     }
   ]
 });
@@ -125,7 +125,7 @@ const router = new Router({
   routes: [
     {
       path: '/',
-      render: () => html`<${Home}/>`
+      response: () => html`<${Home}/>`
     }
   ],
   fallback: ({query, request}) => html`<${NotFound}/>`
@@ -134,7 +134,7 @@ const router = new Router({
 
 ### `plugins`
 
-You can also provide plugins. You can add global plugins that will run for every route, or add plugins for specific routes only. If you return a `Response` from a plugin, the router will return that response to the browser instead of your `render` function.
+You can also provide plugins. You can add global plugins that will run for every route, or add plugins for specific routes only. If you return a `Response` from a plugin, the router will return that response to the browser instead of your `response` function.
 
 ```js
 import { Router, html, HtmlResponse } from 'swtl';
@@ -154,7 +154,7 @@ const router = new Router({
   routes: [
     {
       path: '/',
-      render: () => html`<${Home}/>`,
+      response: () => html`<${Home}/>`,
       /**
        * These plugins run for this route only
        */
@@ -201,7 +201,7 @@ const router = new Router({
   routes: [
     {
       path: '/foo',
-      render: () => html`foo`,
+      response: () => html`foo`,
       options: {
         headers: {
           'content-type': 'text/xml'
@@ -358,6 +358,26 @@ const template = html`
     <div>Not in cache</div>
   <//>
 `;
+```
+
+If you're using SWTL in a more SPA-like PWA app, you can also use the following strategies:
+```js
+import { networkFirst, networkOnly, cacheFirst, cacheOnly } from 'swtl';
+
+import { Router } from 'swtl';
+
+const router = new Router({
+  routes: [
+    {
+      path: '/images/*.svg',
+      response: cacheFirst
+    },
+  ]
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(router.handleRequest(event.request));
+});
 ```
 
 ## Out of order streaming
