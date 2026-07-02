@@ -406,6 +406,8 @@ html`
 
 `Await` uses the [Declarative Partial Updates](https://github.com/WICG/declarative-partial-updates) proposal for out-of-order streaming. The pending state is wrapped in a named range using HTML processing instructions (`<?start name="0">...<?end>`), and once the promise resolves, a `<template for="0">` patch is streamed into the same response to replace it — no inline scripts required.
 
+> **Browser support:** Declarative Partial Updates is at [WHATWG Stage 3](https://github.com/whatwg/html/issues/11542) and not yet shipped in stable browsers. Until browser support lands, the pending placeholder will remain visible and the resolved content inside `<template for="...">` will be inert (not rendered). For production use today you may want to track the shipping status before relying on `Await`.
+
 
 ## Render
 
