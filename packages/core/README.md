@@ -404,6 +404,8 @@ html`
 `
 ```
 
+`Await` uses the [Declarative Partial Updates](https://github.com/WICG/declarative-partial-updates) proposal for out-of-order streaming. The pending state is wrapped in a named range using HTML processing instructions (`<?start name="0">...<?end>`), and once the promise resolves, a `<template for="0">` patch is streamed into the same response to replace it — no inline scripts required.
+
 
 ## Render
 
