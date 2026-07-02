@@ -102,9 +102,9 @@ async function* handle(chunk, promises, customElementRenderers) {
         })
     );
     yield* _render([
-      `<awaiting-promise style="display: contents;" data-id="${id.toString()}">`,
+      `<?start name="${id.toString()}">`,
       template({pending: true, error: false, success: false}, null, null),
-      `</awaiting-promise>`
+      `<?end>`
     ], promises, customElementRenderers);
   } else if (chunk?.kind === CUSTOM_ELEMENT_SYMBOL) {
     const renderer = customElementRenderers.find(r => r.match(chunk))
@@ -192,16 +192,7 @@ export async function* render(template, customElementRenderers = []) {
     const nextPromise =  await Promise.race(promises);
     const { id, template } = nextPromise;
 
-    yield* render(html`
-      <template data-id="${id.toString()}">${template}</template>
-      <script>
-        {
-          let toReplace = document.querySelector('awaiting-promise[data-id="${id.toString()}"]');
-          const template = document.querySelector('template[data-id="${id.toString()}"]').content.cloneNode(true);
-          toReplace.replaceWith(template);
-        }
-      </script>
-    `)
+    yield* render(html`<template for="${id.toString()}">${template}</template>`)
   }
 }
 

@@ -2,6 +2,7 @@ import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import { renderToString } from '../render.js';
 import { html } from '../html.js';
+import { Await, when } from '../await.js';
 
 describe('renderToString', () => {
   function Foo() {
@@ -86,30 +87,32 @@ describe('renderToString', () => {
     assert.equal(result, '<main>hi</main>');
   });
 
-//   // it('Async', async () => {
-//   //   const result = await renderToString(html`<${Async} task=${() => new Promise(r => setTimeout(() => r({foo: 'bar'}), 100))}>
-//   //     ${({state, data}) => html`
-//   //       ${when(state === 'pending', () => html`[PENDING]`)}
-//   //       ${when(state === 'success', () => html`[RESOLVED] ${data.foo}`)}
-//   //     `}
-//   //   <//>`);
-//   //   console.log(result);
-//   //   assert.equal(result, `<pending-task style="display: contents;" data-id="0">
-//   //   [PENDING]
-    
-//   // </pending-task>
-//   // <template data-id="0">
-    
-//   //   [RESOLVED] bar
-//   // </template>
-//   // <script>
-//   //   {
-//   //     let toReplace = document.querySelector('pending-task[data-id="0"]');
-//   //     const template = document.querySelector('template[data-id="0"]').content.cloneNode(true);
-//   //     toReplace.replaceWith(template);
-//   //   }
-//   // </script>`);
-//   // });
+  it('Await - uses declarative partial update markers', async () => {
+    const result = await renderToString(html`<${Await} promise=${() => Promise.resolve({foo: 'bar'})}>
+      ${(status, data) => html`${when(status.pending, () => html`[PENDING]`)}${when(status.success, () => html`[RESOLVED] ${data.foo}`)}`}
+    <//>`);
+
+    assert.ok(result.includes('<?start name="0">'), 'should open a named range marker');
+    assert.ok(result.includes('<?end>'), 'should close the named range marker');
+    assert.ok(result.includes('<template for="0">'), 'should patch via <template for>');
+    assert.ok(result.includes('[PENDING]'), 'should render pending state');
+    assert.ok(result.includes('[RESOLVED] bar'), 'should render resolved state');
+    assert.ok(!result.includes('<script>'), 'should not emit inline scripts');
+    assert.ok(!result.includes('awaiting-promise'), 'should not emit custom element placeholder');
+  });
+
+  it('Await - renders error state via declarative partial update markers', async () => {
+    const result = await renderToString(html`<${Await} promise=${() => Promise.reject(new Error('oops'))}>
+      ${(status, data, error) => html`${when(status.pending, () => html`[PENDING]`)}${when(status.error, () => html`[ERROR] ${error.message}`)}`}
+    <//>`);
+
+    assert.ok(result.includes('<?start name="0">'), 'should open a named range marker');
+    assert.ok(result.includes('<?end>'), 'should close the named range marker');
+    assert.ok(result.includes('<template for="0">'), 'should patch via <template for>');
+    assert.ok(result.includes('[PENDING]'), 'should render pending state');
+    assert.ok(result.includes('[ERROR] oops'), 'should render error state');
+    assert.ok(!result.includes('<script>'), 'should not emit inline scripts');
+  });
 
   it('kitchensink', async () => {
     function Html({children}) {
