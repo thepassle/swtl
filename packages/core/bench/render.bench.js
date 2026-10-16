@@ -57,3 +57,29 @@ console.log('nested Await + rejected promise: 3 templates, unique ids, error tem
 const asyncPage = () => html`<main>${Array.from({ length: 50 }, (_, i) => html`<${Await} promise=${sleep(0, i)}>${tpl('x')}<//>`)}</main>`;
 await bench('Await x50 (current)', async () => { await renderToString(asyncPage()); }, 50);
 await bench('Await x50 (prototype)', async () => { await renderToStringPush(asyncPage()); }, 50);
+
+// --- html(): generator vs plain function ---
+import { htmlArray } from './html-array.js';
+const bigTpl = h => h`<main><h1>Title</h1><${List}>${Array.from({ length: 200 }, (_, n) => h`<${Item} n=${n}>row ${n}<//>`)}<//><my-el a="b" c>x</my-el></main>`;
+const drain = r => { let n = 0; for (const _ of r) n++; return n; };
+if (drain(bigTpl(html)) !== drain(bigTpl(htmlArray))) throw new Error('html chunk count mismatch');
+const strs = await renderToStringPush(bigTpl(htmlArray));
+if (norm([strs]) !== norm([a])) throw new Error('htmlArray render mismatch');
+await bench('full: gen html + gen render', () => renderToString(bigTpl(html)));
+await bench('full: gen html + push render', () => renderToStringPush(bigTpl(html)));
+await bench('full: array html + push render', () => renderToStringPush(bigTpl(htmlArray)));
+
+// --- custom element renderers ---
+import { CUSTOM_ELEMENT_SYMBOL } from '../symbol.js';
+const legacyR = { name: 'x', match: c => c.tag === 'my-el', async *render({ tag, children }, rc) { yield `<${tag} data-legacy>`; yield* rc(children); yield `</${tag}>`; } };
+const pushR = { match: c => c.tag === 'my-el', push({ tag, children }, rc, w) { w(`<${tag} data-legacy>`); const r = rc(children); return r ? r.then(() => void w(`</${tag}>`)) : void w(`</${tag}>`); } };
+const ce = () => html`<div><my-el a="1">hi <my-el>inner</my-el><${Item} n=${1}>x<//></my-el></div>`;
+const gOut = await renderToString(ce(), [legacyR]);
+const lOut = await renderToStringPush(ce(), [legacyR]);
+const pOut = await renderToStringPush(ce(), [pushR]);
+if (gOut !== lOut || lOut !== pOut) { console.log(gOut, '\n', lOut, '\n', pOut); throw new Error('custom renderer mismatch'); }
+console.log('custom renderers: legacy gen (current), legacy via adapter, and push all identical');
+const manyCe = () => html`<div>${Array.from({ length: 200 }, (_, i) => html`<my-el a=${i}>child ${i}</my-el>`)}</div>`;
+await bench('custom el: legacy gen, current', () => renderToString(manyCe(), [legacyR]));
+await bench('custom el: legacy gen, adapter', () => renderToStringPush(manyCe(), [legacyR]));
+await bench('custom el: push renderer', () => renderToStringPush(manyCe(), [pushR]));

@@ -5,7 +5,8 @@ import { SLOT_SYMBOL, COMPONENT_SYMBOL, CUSTOM_ELEMENT_SYMBOL, AWAIT_SYMBOL } fr
  * Prototype: push-based renderer (no generators). Chunks are written to
  * `write`; functions only return a promise when something actually is async,
  * so fully synchronous trees never touch a promise.
- * Supports <Await> + out-of-order streaming. Not supported: custom (non-default) renderers.
+ * Supports <Await> + out-of-order streaming and custom element renderers
+ * (new `push` contract, plus an adapter for legacy generator renderers).
  *
  * `ctx` = { write, pending }: `pending` holds in-flight Await promises that
  * are flushed out-of-order after the main pass, as the originals settle.
@@ -16,6 +17,36 @@ const props = (properties) => {
   for (const p of properties) o[p.name] = p.value;
   return o;
 };
+
+/**
+ * Push-style default renderer. Contract: `push(el, renderChildren, write)`,
+ * where renderChildren(children) writes children and returns void | Promise.
+ */
+export const defaultPushRenderer = {
+  match: () => true,
+  push({ tag, children, attributes }, renderChildren, write) {
+    let attrs = '';
+    for (let i = 0; i < attributes.length; i++) {
+      const { name, value } = attributes[i];
+      attrs += (typeof value === 'boolean' && value ? name : `${name}="${value}"`) + (i < attributes.length - 1 ? ' ' : '');
+    }
+    write(attrs.length ? `<${tag} ${attrs}>` : `<${tag}>`);
+    const r = renderChildren(children);
+    if (r) return r.then(() => void write(`</${tag}>`));
+    write(`</${tag}>`);
+  }
+};
+
+/** Adapter so existing async-generator renderers (`render(el, renderChildren)`) keep working. */
+async function legacy(renderer, chunk, ctx) {
+  const renderChildren = async function* (children) {
+    const buf = [];
+    const r = renderIterable(children, { ...ctx, write: c => buf.push(c) });
+    if (r) await r;
+    yield* buf;
+  };
+  for await (const c of renderer.render(chunk, renderChildren)) ctx.write(c);
+}
 
 function renderIterable(iterable, ctx) {
   if (iterable[Symbol.asyncIterator]) {
@@ -61,16 +92,11 @@ function handle(chunk, ctx) {
     ], ctx);
   }
   if (chunk?.kind === CUSTOM_ELEMENT_SYMBOL) {
-    const { tag, children, attributes } = chunk;
-    let attrs = '';
-    for (let i = 0; i < attributes.length; i++) {
-      const { name, value } = attributes[i];
-      attrs += (typeof value === 'boolean' && value ? name : `${name}="${value}"`) + (i < attributes.length - 1 ? ' ' : '');
-    }
-    ctx.write(attrs.length ? `<${tag} ${attrs}>` : `<${tag}>`);
-    const r = renderIterable(children, ctx);
-    if (r) return r.then(() => void ctx.write(`</${tag}>`));
-    return void ctx.write(`</${tag}>`);
+    const renderer = ctx.renderers.find(r => r.match(chunk));
+    if (!renderer) return;
+    if (renderer.push) return renderer.push(chunk, children => renderIterable(children, ctx), ctx.write);
+    if (renderer.render) return legacy(renderer, chunk, ctx);
+    return;
   }
   if (chunk?.kind === COMPONENT_SYMBOL) {
     const children = [];
@@ -101,8 +127,8 @@ async function renderStream(stream, ctx) {
   }
 }
 
-async function run(template, write) {
-  const ctx = { write, pending: new Map(), nextId: 0 };
+async function run(template, write, renderers = []) {
+  const ctx = { write, pending: new Map(), nextId: 0, renderers: [...renderers, defaultPushRenderer] };
   const r = renderIterable(template, ctx);
   if (r) await r;
   while (ctx.pending.size > 0) {
@@ -122,17 +148,17 @@ async function run(template, write) {
   }
 }
 
-export async function renderToStringPush(template) {
+export async function renderToStringPush(template, renderers) {
   let result = '';
-  await run(template, c => { result += c; });
+  await run(template, c => { result += c; }, renderers);
   return result;
 }
 
 /** Same chunks as render(), as a ReadableStream; OOO chunks flush as promises settle. */
-export function renderPush(template) {
+export function renderPush(template, renderers) {
   return new ReadableStream({
     async start(controller) {
-      await run(template, c => controller.enqueue(c));
+      await run(template, c => controller.enqueue(c), renderers);
       controller.close();
     }
   });
